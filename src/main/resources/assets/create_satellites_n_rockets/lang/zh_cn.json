@@ -3,7 +3,7 @@
   "block.create_satellites_n_rockets.ground_console": "地面控制台",
   "item.create_satellites_n_rockets.satellite": "人造卫星",
   "item.create_satellites_n_rockets.satellite.tooltip": "对发射台使用以竖起火箭",
-  "itemGroup.create_satellites_n_rockets": "Create: Satellites 'n' Rockets",
+  "itemGroup.create_satellites_n_rockets": "机械动力：航空航天工程",
   "entity.create_satellites_n_rockets.rocket": "火箭",
   "create_satellites_n_rockets.display_source.satellite": "卫星位置",
   "message.create_satellites_n_rockets.pad_occupied": "发射台上已有火箭",

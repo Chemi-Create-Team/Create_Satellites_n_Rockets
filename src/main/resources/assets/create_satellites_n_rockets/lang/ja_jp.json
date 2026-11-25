@@ -3,7 +3,7 @@
   "block.create_satellites_n_rockets.ground_console": "地上管制コンソール",
   "item.create_satellites_n_rockets.satellite": "人工衛星",
   "item.create_satellites_n_rockets.satellite.tooltip": "発射台に使うとロケットが立つ",
-  "itemGroup.create_satellites_n_rockets": "Create: Satellites 'n' Rockets",
+  "itemGroup.create_satellites_n_rockets": "Create: 航空宇宙工学",
   "entity.create_satellites_n_rockets.rocket": "ロケット",
   "create_satellites_n_rockets.display_source.satellite": "衛星の位置",
   "message.create_satellites_n_rockets.pad_occupied": "この発射台にはすでにロケットが立っている",

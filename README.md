@@ -1,4 +1,4 @@
-# Create: Satellites 'n' Rockets
+# Create: Aerospace Engineering
 
 Launch rockets from a pad, put satellites into orbit, find and command them from a ground control console, and watch them cross
 the night sky. Needs [Create](https://modrinth.com/mod/create); fuels from

@@ -3,7 +3,7 @@
   "block.create_satellites_n_rockets.ground_console": "Ground Control Console",
   "item.create_satellites_n_rockets.satellite": "Satellite",
   "item.create_satellites_n_rockets.satellite.tooltip": "Use on a Launch Pad to stand a rocket up.",
-  "itemGroup.create_satellites_n_rockets": "Create: Satellites 'n' Rockets",
+  "itemGroup.create_satellites_n_rockets": "Create: Aerospace Engineering",
   "entity.create_satellites_n_rockets.rocket": "Rocket",
   "create_satellites_n_rockets.display_source.satellite": "Satellite Position",
   "message.create_satellites_n_rockets.pad_occupied": "A rocket already stands on this pad.",
