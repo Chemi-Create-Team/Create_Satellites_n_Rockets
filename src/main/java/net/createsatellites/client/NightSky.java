@@ -74,7 +74,6 @@ public final class NightSky {
                 prev = p; prevWidth = width; prevAlpha = alpha;
             }
             point(b, m, OrbitMath.direction(now), size, dark * glow);
-            point(b, m, OrbitMath.direction(now), size * 3.2f, dark * glow * 0.16f);
             any = true;
         }
         if (any) BufferUploader.drawWithShader(b.buildOrThrow());
