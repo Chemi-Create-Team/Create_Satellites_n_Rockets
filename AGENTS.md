@@ -6,7 +6,7 @@ CAE（旧名 Create: Satellites 'n' Rockets）は、ロケットを発射台か�
 
 | 項目 | 正本・方針 |
 | --- | --- |
-| 現行仕様 | [README.md](README.md)（ブロックの挙動・燃料・軌道・既知の制限） |
+| 現行仕様 | [README.md](README.md)（英語）と [README.ja.md](README.ja.md)（日本語。内容を一致させる）。ブロックの挙動・燃料・軌道・既知の制限 |
 | ID・版 | `gradle.properties` と `CreateAerospace.MOD_ID`。mod ID `create_aerospace_engineering`、Java `net.createaerospace` |
 | 表示名 | `mod_name`（`gradle.properties`）と `itemGroup.create_aerospace_engineering`（`lang/*.json`）、READMEの題名。現行は「Create: Aerospace Engineering」 |
 | 依存 | NeoForge 21.1.228+（Minecraft 1.21.1）、Create 6.0.10+。RnRは任意。版の基準は `gradle.properties` |
@@ -47,7 +47,7 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 
 ## 文書と検証
 
-1. ブロック・アイテム・レシピ・数値（推力・容量・高度・上限数など）を変えたら、同じ作業でREADMEの該当節と、`lang/` の3言語（`en_us`・`ja_jp`・`zh_cn`）を更新する。未確定値を推測で書かない。
+1. ブロック・アイテム・レシピ・数値（推力・容量・高度・上限数など）を変えたら、同じ作業でREADMEの該当節（英語の `README.md` と日本語の `README.ja.md` の両方）と、`lang/` の3言語（`en_us`・`ja_jp`・`zh_cn`）を更新する。未確定値を推測で書かない。
 2. 実装・レシピ・READMEの値を照合する。文書だけの変更ならビルドは不要で、リンクとコードの未変更を確認する。
 3. Java・データ・レシピを変えたら次を実行する。ゲームテストは `run/world` を毎回消す必要がある。
 

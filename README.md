@@ -1,5 +1,7 @@
 # Create: Aerospace Engineering
 
+**English** | [日本語](README.ja.md)
+
 Launch rockets from a pad, put satellites into orbit, find and command them from a ground control console, and watch them cross
 the night sky. Needs [Create](https://modrinth.com/mod/create); fuels from
 [Create: Refinery 'n' Reactors](https://github.com/Chemi-Create-Team/chemicreate-sub) are used when it is installed.
