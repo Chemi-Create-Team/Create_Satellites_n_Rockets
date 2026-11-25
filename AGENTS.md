@@ -42,6 +42,7 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 - 地上管制コンソールはRnRの原子炉制御盤と同じ作り。ボタンは天面にあり、クリック位置を操作者の座標系（`GroundConsoleBlock.uv`）で当てる。座標は `ConsoleButton`、向きは `FACING`（操作者の側を向く）、ダイヤルは左半分で下げ右半分で上げる。見た目の動く部分は `GroundConsoleRenderer`、状態はブロックエンティティの更新タグで同期する。
 - 衛星の変更は所有者かOP（`Satellite.controlledBy`）だけ。閲覧は誰でもできる。軌道離脱はカバー（`GUARD_TICKS`）を開けた後の2回目のクリック。
 - 衛星の一覧は `SatellitesPayload` でログイン時と変更時に全プレイヤーへ送る。名前の長さは `Satellite.MAX_NAME` で切る（パケット上限を超えるとプレイヤーが切断されるため）。
+- 衛星マップ画面（`SatelliteMapScreen`）は管制室風の3列（左に衛星一覧、中央に世界地図と地上軌跡、右に選択中の読み取り）。陸地は `textures/gui/world_map.png`（Natural Earth 1:110m、パブリックドメイン、512×256の正距円筒）。右の読み取りは `SatelliteReadout` を使い、コンソール・CFSアプリと同じ値にする。琥珀・緑・青の配色は画面とCFSアプリでそろえ、モードの色は `SatelliteReadout.MODE_COLORS` に置く。
 - 夜空は `RenderLevelStageEvent` の `AFTER_SKY` で素のテッセレータを使う（`client/NightSky`）。シェーダーパックが空を置き換える場合の非対応は既知の制限。
 - Mixinを使わず、Createの公開APIを使う。単純化で上限を作る箇所には `ponytail:` コメントで上限と拡張方法を書く。
 - 地上管制コンソールは、CFS（Create: Frontier Science）0.3.17以降があるときだけ、共通制御コンピュータの「追加アプリ」としても使える（`compat/cfs`）。**任意の連携で、必須依存にしない。** `net.createfrontier.*` を参照してよいのは `CfsComputerApp` だけで、`CfsCompat` が `ModList` と `ComputerApps` クラスの有無を確かめてから呼ぶ。`libs/` のAPI JAR（`compileOnly`）は、CFSの `dist/` の公式のものをそのまま使い、版を上げるときはハッシュを `build.gradle` のコメントに書く。CFS本体は変更しない。

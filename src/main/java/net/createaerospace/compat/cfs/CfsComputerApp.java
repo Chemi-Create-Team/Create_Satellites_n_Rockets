@@ -82,16 +82,23 @@ final class CfsComputerApp implements Application {
             buttons.add(new Button(id, Component.translatable(K + "button." + id + (deorbit && cover ? "_confirm" : "")),
                     deorbit ? Tone.DANGER : Tone.NORMAL, enabled));
         }
+        // values in the amber and green of the console screen; the label and the frame stay in CFS colors
         return new Panel(Component.literal(r.name()), r.mode() == Satellite.STANDBY ? Tone.NORMAL : Tone.GOOD, List.of(
-                reading("selected", Component.literal(r.number() + " / " + r.count())),
-                reading("owner", Component.literal(r.owner())),
-                reading("position", Component.literal(r.lat() + "  " + r.lon())),
-                reading("block", Component.literal("X " + r.blockX() + "  Z " + r.blockZ())),
-                reading("altitude", Component.literal(r.altKm() + " km")),
-                reading("inclination", Component.literal(r.inclDeg() + "°")),
-                reading("period", Component.literal(r.periodMin() + " min")),
-                reading("mode", r.modeName()),
-                reading("visibility", r.visibility())), buttons);
+                reading("selected", led(r.number() + " / " + r.count())),
+                reading("owner", led(r.owner())),
+                reading("position", led(r.lat() + "  " + r.lon())),
+                reading("block", led("X " + r.blockX() + "  Z " + r.blockZ())),
+                reading("altitude", led(r.altKm() + " km")),
+                reading("inclination", led(r.inclDeg() + "°")),
+                reading("period", led(r.periodMin() + " min")),
+                reading("mode", r.modeName().withColor(SatelliteReadout.modeColor(r.mode()))),
+                reading("visibility", r.visibility().withColor(r.above() ? GREEN : DIM))), buttons);
+    }
+
+    private static final int AMBER = 0xFFB020, GREEN = 0x55FF77, DIM = 0x7F93AA;
+
+    private static Component led(String text) {
+        return Component.literal(text).withColor(AMBER);
     }
 
     private static Reading reading(String key, Component value) {

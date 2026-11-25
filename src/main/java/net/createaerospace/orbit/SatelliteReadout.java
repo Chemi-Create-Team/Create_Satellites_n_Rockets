@@ -3,6 +3,7 @@ package net.createaerospace.orbit;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
 /**
  * Everything the ground console shows about the selected satellite. The console screen and the Control Computer app (see
@@ -23,12 +24,19 @@ public record SatelliteReadout(String name, int number, int count, String lat, S
                 s.ownerName());
     }
 
-    public Component modeName() {
+    /** Standby amber, beacon green, flash cyan: the lamp on the console and on the map screen, and the mode in the Control Computer app. */
+    public static final int[] MODE_COLORS = {0xFFB020, 0x30FF60, 0x40E0FF};
+
+    public static int modeColor(int mode) {
+        return MODE_COLORS[mode];
+    }
+
+    public MutableComponent modeName() {
         return Component.translatable(K + "mode." + mode);
     }
 
     /** The line that tells whether the satellite is above the horizon of the viewer. */
-    public Component visibility() {
+    public MutableComponent visibility() {
         return above ? Component.translatable(K + "above", elevation, azimuth) : Component.translatable(K + "below");
     }
 

@@ -26,7 +26,6 @@ public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleB
     private static final float TEXT_SCALE = 0.0065f;
     /** The screen is .84 of a block wide, in text pixels. */
     private static final float MAX_LINE_WIDTH = .84f / TEXT_SCALE;
-    private static final int[] MODE_COLORS = {0xFFB020, 0x30FF60, 0x40E0FF};
     private final Font font;
 
     public GroundConsoleRenderer(BlockEntityRendererProvider.Context ctx) {
@@ -43,7 +42,7 @@ public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleB
         VertexConsumer q = buffers.getBuffer(RenderType.entityTranslucent(WHITE));
         Matrix4f m = ps.last().pose();
         if (s != null) {
-            int c = MODE_COLORS[s.mode()];
+            int c = SatelliteReadout.modeColor(s.mode());
             quad(q, ps, ConsoleButton.MODE.u, ConsoleButton.MODE.v, .05f, c, 255, 0);
             scale(q, ps, ConsoleButton.ALTITUDE, s.tier());
             scale(q, ps, ConsoleButton.INCLINATION, s.incl());

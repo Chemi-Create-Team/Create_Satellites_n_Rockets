@@ -31,7 +31,7 @@ the one you want.
   keeps the satellite where it is and sets it on the new orbit.
 - **Deorbit** is under a cover. The first click lifts the cover, a second click within ten seconds removes the satellite.
 - The screen shows the selected satellite's latitude and longitude, **the block coordinates under it**, orbit, mode and
-  whether it is above your horizon. The **map** shows every satellite on a world map with the selected one's track.
+  whether it is above your horizon. The **map** opens a mission control screen: a world map with the ground track of every satellite (the selected one in yellow), the list of satellites on the left and the readout of the selected one on the right.
 
 Only the owner of a satellite (or an operator) can change it. Anyone can read it. A **Display Link** pointed at the console
 shows the selected satellite's position on any display.
@@ -68,3 +68,7 @@ without Frontier Science nothing changes.
 ## Building
 
 `./gradlew build`. `./gradlew runGameTestServer` runs the tests.
+
+## Credits
+
+The land on the map screen is drawn from [Natural Earth](https://www.naturalearthdata.com/) 1:110m land, public domain.
