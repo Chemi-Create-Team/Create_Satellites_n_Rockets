@@ -1,0 +1,6 @@
+{
+  "replace": false,
+  "values": [
+    {"id": "create_refinery_n_reactors:hydrogen_gas", "required": false}
+  ]
+}

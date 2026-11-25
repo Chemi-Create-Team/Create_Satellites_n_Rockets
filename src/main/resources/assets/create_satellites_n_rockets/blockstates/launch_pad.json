@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "create_satellites_n_rockets:block/launch_pad"
+    }
+  }
+}

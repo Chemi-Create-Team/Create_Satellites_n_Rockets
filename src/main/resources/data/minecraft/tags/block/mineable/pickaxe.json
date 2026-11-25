@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "create_satellites_n_rockets:launch_pad",
+    "create_satellites_n_rockets:rocket_engine",
+    "create_satellites_n_rockets:launch_controller",
+    "create_satellites_n_rockets:satellite_core",
+    "create_satellites_n_rockets:station_core"
+  ]
+}

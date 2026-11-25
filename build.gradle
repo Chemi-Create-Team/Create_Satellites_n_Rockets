@@ -1,0 +1,77 @@
+plugins {
+    id "java-library"
+    id "idea"
+    id "net.neoforged.moddev" version "2.0.141"
+}
+
+group = mod_group_id
+version = mod_version
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = neo_version
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+
+    runs {
+        configureEach {
+            systemProperty "forge.logging.markers", "REGISTRIES"
+            systemProperty "neoforge.enabledGameTestNamespaces", mod_id
+        }
+        client {
+            client()
+            // ./gradlew runClient -PquickPlay=<world folder in run/saves> jumps straight into a world
+            if (project.hasProperty('quickPlay')) programArguments.addAll('--quickPlaySingleplayer', project.property('quickPlay'))
+        }
+        server {
+            server()
+            programArgument "--nogui"
+        }
+        gameTestServer {
+            type = "gameTestServer"
+            systemProperty "neoforge.enabledGameTestNamespaces", mod_id
+        }
+    }
+}
+
+repositories {
+    maven { url = "https://maven.blamejared.com" }
+    maven { url = "https://api.modrinth.com/maven" }
+}
+
+configurations {
+    createDistribution { canBeConsumed = false }
+    implementation.extendsFrom(createDistribution)
+    sableDistribution { canBeConsumed = false }
+    implementation.extendsFrom(sableDistribution)
+}
+
+dependencies {
+    createDistribution("maven.modrinth:create:${create_version_id}") { transitive = false }
+    // Compile against the same Ponder, Flywheel and Registrate bundled with Create at runtime.
+    compileOnly(files(provider {
+        zipTree(configurations.createDistribution.singleFile).matching { include "META-INF/jarjar/*.jar" }.files
+    }))
+    // Sable's own API names Veil and Sable Companion types, which it ships as nested jars.
+    sableDistribution("maven.modrinth:sable:${sable_version_id}") { transitive = false }
+    compileOnly(files(provider {
+        zipTree(configurations.sableDistribution.singleFile).matching { include "META-INF/jarjar/*.jar" }.files
+    }))
+}
+
+tasks.named("processResources", ProcessResources).configure {
+    def replaceProperties = [
+        mod_id: mod_id, mod_name: mod_name, mod_version: mod_version, mod_authors: mod_authors,
+        mod_license: mod_license, mod_description: mod_description, minecraft_version: minecraft_version,
+        neo_version: neo_version
+    ]
+    inputs.properties replaceProperties
+    filesMatching("META-INF/neoforge.mods.toml") { expand replaceProperties }
+}
+
+tasks.withType(JavaCompile).configureEach { options.encoding = "UTF-8" }

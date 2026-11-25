@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SY",
+    "YS"
+  ],
+  "key": {
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "Y": {
+      "item": "minecraft:yellow_dye"
+    }
+  },
+  "result": {
+    "id": "create_satellites_n_rockets:launch_pad",
+    "count": 4
+  }
+}

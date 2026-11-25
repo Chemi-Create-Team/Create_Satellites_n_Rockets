@@ -1,0 +1,15 @@
+build/
+bin/
+out/
+.gradle/
+.gradletasknamecache
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+hs_err_pid*
+replay_pid*
+.idea/
+*.iml
+.vscode/
+run/
+logs/

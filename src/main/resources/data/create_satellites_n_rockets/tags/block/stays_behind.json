@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "create_satellites_n_rockets:launch_pad",
+    "#minecraft:dirt",
+    "#minecraft:base_stone_overworld",
+    "#minecraft:sand",
+    "#minecraft:snow",
+    "minecraft:bedrock",
+    "minecraft:gravel",
+    "minecraft:water",
+    "minecraft:lava"
+  ]
+}
