@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "create_aerospace_engineering:block/launch_pad"
+    },
+    "powered=true": {
+      "model": "create_aerospace_engineering:block/launch_pad"
+    }
+  }
+}

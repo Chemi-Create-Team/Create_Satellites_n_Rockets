@@ -7,16 +7,26 @@ CAE（旧名 Create: Satellites 'n' Rockets）は、ロケットを発射台か�
 | 項目 | 正本・方針 |
 | --- | --- |
 | 現行仕様 | [README.md](README.md)（ブロックの挙動・燃料・軌道・既知の制限） |
-| ID・版 | `gradle.properties` と `CreateSatellites.MOD_ID`。mod ID `create_satellites_n_rockets`、Java `net.createsatellites` |
-| 表示名 | `mod_name`（`gradle.properties`）と `itemGroup.create_satellites_n_rockets`（`lang/*.json`）、READMEの題名。現行は「Create: Aerospace Engineering」 |
+| ID・版 | `gradle.properties` と `CreateAerospace.MOD_ID`。mod ID `create_aerospace_engineering`、Java `net.createaerospace` |
+| 表示名 | `mod_name`（`gradle.properties`）と `itemGroup.create_aerospace_engineering`（`lang/*.json`）、READMEの題名。現行は「Create: Aerospace Engineering」 |
 | 依存 | NeoForge 21.1.228+（Minecraft 1.21.1）、Create 6.0.10+。RnRは任意。版の基準は `gradle.properties` |
-| 登録 | `CreateSatellites`（`DeferredRegister`）。ブロック2種（発射台・地上管制コンソール）、アイテム1種（人工衛星）、エンティティ1種（ロケット）、ブロックエンティティ2種、Display Link用の表示ソース1つ、クリエイティブタブ1つ |
+| 登録 | `CreateAerospace`（`DeferredRegister`）。ブロック2種（発射台・地上管制コンソール）、アイテム1種（人工衛星）、エンティティ1種（ロケット）、ブロックエンティティ2種、Display Link用の表示ソース1つ、クリエイティブタブ1つ |
 | リソース | `assets/` と `data/` は手書き。生成スクリプトは無く、直接編集してよい |
 | 検証 | ローカルのみ（CIなし）。[文書と検証](#文書と検証) |
 
 ### 名称の扱い
 
-表示名だけを変え、mod ID・Javaパッケージ・クラス名・リソースの名前空間（`create_satellites_n_rockets`）は変えません。変えるとワールド・レシピ・ブロックID・保存済みの衛星データが壊れるためです。ID移行はユーザーが明示したときだけ行い、旧IDの救済（`MissingMappings` 等）を同時に用意します。新しい文言を書くときは、表示名には新名称を使い、旧名称へ戻しません。
+旧名（Satellites 'n' Rockets、`create_satellites_n_rockets`、`net.createsatellites`、`CreateSatellites`）は残さず、すべて新名へ移行済みです。新しい文言・コード・ID・コマンドには旧名を使いません。
+
+| 項目 | 現在の名前 |
+| --- | --- |
+| 表示名 | Create: Aerospace Engineering（CAE） |
+| mod ID・リソースの名前空間 | `create_aerospace_engineering` |
+| Java | パッケージ `net.createaerospace`、主クラス `CreateAerospace` |
+| Gradle | `rootProject.name` は `create-aerospace-engineering` |
+| 衛星の保存データ | `create_aerospace_engineering_satellites`（`MOD_ID` から作る） |
+
+mod IDを変えたため、旧IDで保存したワールドのブロック・アイテム・衛星データは読めません（旧IDの救済は用意していない）。以後のID変更はユーザーが明示したときだけ行います。
 
 ## 版の管理
 

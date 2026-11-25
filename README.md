@@ -9,7 +9,7 @@ Everything happens in the normal world. There is no trip to space.
 ## Launching
 
 1. **Launch Pad**: fill it with fuel, 8000 mB at most, by bucket or pipe. A launch burns 4000 mB. Lava always works; naphtha,
-   methanol, low-sulfur diesel and hydrogen work with Refinery 'n' Reactors (tag `create_satellites_n_rockets:rocket_fuel`).
+   methanol, low-sulfur diesel and hydrogen work with Refinery 'n' Reactors (tag `create_aerospace_engineering:rocket_fuel`).
 2. Use a **Satellite** on the pad: a rocket (an ordinary entity with a 3D model) stands up on it. Rename the satellite on an
    anvil to name it. Right-click the pad with an empty hand to read fuel and loading.
 3. Give the pad a **redstone signal** (a new one: a pad that is already powered does not fire when you fill it later). The rocket climbs for a few seconds, releases the satellite and is gone. If the pad is

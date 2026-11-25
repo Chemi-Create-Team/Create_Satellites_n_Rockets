@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SSS",
+    "SFS",
+    "CCC"
+  ],
+  "key": {
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "F": {
+      "item": "create:fluid_tank"
+    },
+    "C": {
+      "item": "create:andesite_casing"
+    }
+  },
+  "result": {
+    "id": "create_aerospace_engineering:launch_pad",
+    "count": 1
+  }
+}

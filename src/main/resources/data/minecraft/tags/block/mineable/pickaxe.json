@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "create_satellites_n_rockets:launch_pad",
-    "create_satellites_n_rockets:ground_console"
+    "create_aerospace_engineering:launch_pad",
+    "create_aerospace_engineering:ground_console"
   ]
 }
