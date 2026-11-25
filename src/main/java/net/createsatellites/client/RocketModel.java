@@ -11,7 +11,7 @@ import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 
-/** Body, payload fairing, nose, four fins and a nozzle. The 128x128 texture is laid out by tools/ in this repository's history. */
+/** Body, payload fairing, nose, four fins and a nozzle. The 128x128 texture holds each box unwrapped at its texOffs: body (0,0), fairing (0,64), nose (48,64), the two fin shapes (64,0) and (64,20), nozzle (64,44). */
 public class RocketModel extends EntityModel<RocketEntity> {
     private final ModelPart root;
 

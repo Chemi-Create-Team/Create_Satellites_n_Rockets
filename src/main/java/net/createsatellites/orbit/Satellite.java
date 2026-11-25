@@ -11,6 +11,13 @@ import net.minecraft.network.FriendlyByteBuf;
 public record Satellite(UUID id, String name, UUID owner, String ownerName, int tier, int incl, double raan, double phase0, long epoch, int mode) {
     public static final int STANDBY = 0, BEACON = 1, FLASH = 2;
     public static final int MODES = 3;
+    /** Anvil names go to 50; the packet limit below is higher, so a long name can never break the player list. */
+    public static final int MAX_NAME = 50;
+
+    public Satellite {
+        name = name.length() > MAX_NAME ? name.substring(0, MAX_NAME) : name;
+        ownerName = ownerName.length() > MAX_NAME ? ownerName.substring(0, MAX_NAME) : ownerName;
+    }
 
     /** A new satellite released over the given longitude at the equator, climbing north-east. */
     public static Satellite deployed(String name, UUID owner, String ownerName, double lonDeg, long now) {
@@ -67,12 +74,12 @@ public record Satellite(UUID id, String name, UUID owner, String ownerName, int 
     }
 
     public void write(FriendlyByteBuf b) {
-        b.writeUUID(id).writeUtf(name, 32).writeUUID(owner).writeUtf(ownerName, 32).writeVarInt(tier).writeVarInt(incl)
+        b.writeUUID(id).writeUtf(name, 64).writeUUID(owner).writeUtf(ownerName, 64).writeVarInt(tier).writeVarInt(incl)
                 .writeDouble(raan).writeDouble(phase0).writeLong(epoch).writeVarInt(mode);
     }
 
     public static Satellite read(FriendlyByteBuf b) {
-        return new Satellite(b.readUUID(), b.readUtf(32), b.readUUID(), b.readUtf(32), b.readVarInt(), b.readVarInt(),
+        return new Satellite(b.readUUID(), b.readUtf(64), b.readUUID(), b.readUtf(64), b.readVarInt(), b.readVarInt(),
                 b.readDouble(), b.readDouble(), b.readLong(), b.readVarInt());
     }
 }

@@ -24,6 +24,8 @@ import org.joml.Matrix4f;
 public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleBlockEntity> {
     private static final ResourceLocation WHITE = CreateSatellites.id("textures/misc/white.png");
     private static final float TEXT_SCALE = 0.0065f;
+    /** The screen is .84 of a block wide, in text pixels. */
+    private static final float MAX_LINE_WIDTH = .84f / TEXT_SCALE;
     private static final int[] MODE_COLORS = {0xFFB020, 0x30FF60, 0x40E0FF};
     private final Font font;
 
@@ -57,7 +59,13 @@ public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleB
         ps.scale(TEXT_SCALE, TEXT_SCALE, -TEXT_SCALE);
         int y = 0;
         for (var line : lines(be, s, now + partial)) {
-            font.drawInBatch(line.getVisualOrderText(), 0, y, 0x55FF77, false, ps.last().pose(), buffers, Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+            // squeeze a line that would run past the screen instead of guessing at string lengths in every language
+            float fit = Math.min(1f, MAX_LINE_WIDTH / Math.max(1, font.width(line)));
+            ps.pushPose();
+            ps.translate(0, y, 0);
+            ps.scale(fit, fit, 1);
+            font.drawInBatch(line.getVisualOrderText(), 0, 0, 0x55FF77, false, ps.last().pose(), buffers, Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+            ps.popPose();
             y += 9;
         }
         ps.popPose();

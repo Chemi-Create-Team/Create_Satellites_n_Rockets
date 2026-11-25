@@ -119,6 +119,11 @@ public class OrbitGameTests {
         SatellitesPayload.CODEC.encode(buf, new SatellitesPayload(java.util.List.of(s, s.withMode(0))));
         var back = SatellitesPayload.CODEC.decode(buf).satellites();
         h.assertTrue(back.size() == 2 && back.get(0).equals(s) && back.get(1).mode() == 0, "payload round trip");
+        Satellite longName = new Satellite(UUID.randomUUID(), "x".repeat(60), OWNER, "y".repeat(60), 0, 0, 0, 0, 0, Satellite.BEACON);
+        h.assertTrue(longName.name().length() == Satellite.MAX_NAME, "long names are clamped");
+        var buf2 = new RegistryFriendlyByteBuf(Unpooled.buffer(), access);
+        SatellitesPayload.CODEC.encode(buf2, new SatellitesPayload(java.util.List.of(longName)));
+        h.assertTrue(SatellitesPayload.CODEC.decode(buf2).satellites().get(0).equals(longName), "a long name still goes over the network");
         var data = SatelliteData.get(h.getLevel().getServer());
         data.put(h.getLevel().getServer(), s);
         CompoundTag saved = data.save(new CompoundTag(), access);
