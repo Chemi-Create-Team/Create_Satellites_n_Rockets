@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/cube_bottom_top",
-  "textures": {
-    "top": "create_satellites_n_rockets:block/launch_controller_top",
-    "bottom": "create_satellites_n_rockets:block/launch_controller_top",
-    "side": "create_satellites_n_rockets:block/launch_controller_side"
-  }
-}

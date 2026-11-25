@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BBB",
+    "TPT",
+    "CCC"
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "T": {
+      "item": "create:electron_tube"
+    },
+    "P": {
+      "item": "create:precision_mechanism"
+    },
+    "C": {
+      "item": "create:brass_casing"
+    }
+  },
+  "result": {
+    "id": "create_satellites_n_rockets:ground_console",
+    "count": 1
+  }
+}

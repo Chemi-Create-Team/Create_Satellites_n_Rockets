@@ -1,7 +1,0 @@
-{
-  "variants": {
-    "": {
-      "model": "create_satellites_n_rockets:block/station_core"
-    }
-  }
-}

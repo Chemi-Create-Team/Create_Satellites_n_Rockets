@@ -30,13 +30,6 @@ versionRange = "[6.0.10,)"
 ordering = "AFTER"
 side = "BOTH"
 
-[[dependencies."${mod_id}"]]
-modId = "sable"
-type = "required"
-versionRange = "[2.0.6,)"
-ordering = "AFTER"
-side = "BOTH"
-
 # Rocket fuel is read from Create: Refinery 'n' Reactors' fluids when it is installed.
 [[dependencies."${mod_id}"]]
 modId = "create_refinery_n_reactors"

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "random_sequence": "create_satellites_n_rockets:blocks/ground_console",
+  "pools": [
+    {
+      "rolls": 1,
+      "bonus_rolls": 0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "create_satellites_n_rockets:ground_console"
+        }
+      ]
+    }
+  ]
+}

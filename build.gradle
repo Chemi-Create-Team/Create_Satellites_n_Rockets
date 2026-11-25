@@ -47,8 +47,6 @@ repositories {
 configurations {
     createDistribution { canBeConsumed = false }
     implementation.extendsFrom(createDistribution)
-    sableDistribution { canBeConsumed = false }
-    implementation.extendsFrom(sableDistribution)
 }
 
 dependencies {
@@ -56,11 +54,6 @@ dependencies {
     // Compile against the same Ponder, Flywheel and Registrate bundled with Create at runtime.
     compileOnly(files(provider {
         zipTree(configurations.createDistribution.singleFile).matching { include "META-INF/jarjar/*.jar" }.files
-    }))
-    // Sable's own API names Veil and Sable Companion types, which it ships as nested jars.
-    sableDistribution("maven.modrinth:sable:${sable_version_id}") { transitive = false }
-    compileOnly(files(provider {
-        zipTree(configurations.sableDistribution.singleFile).matching { include "META-INF/jarjar/*.jar" }.files
     }))
 }
 

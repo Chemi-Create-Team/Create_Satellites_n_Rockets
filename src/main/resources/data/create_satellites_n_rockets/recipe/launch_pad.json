@@ -2,19 +2,23 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "SY",
-    "YS"
+    "SSS",
+    "SFS",
+    "CCC"
   ],
   "key": {
     "S": {
       "item": "create:iron_sheet"
     },
-    "Y": {
-      "item": "minecraft:yellow_dye"
+    "F": {
+      "item": "create:fluid_tank"
+    },
+    "C": {
+      "item": "create:andesite_casing"
     }
   },
   "result": {
     "id": "create_satellites_n_rockets:launch_pad",
-    "count": 4
+    "count": 1
   }
 }

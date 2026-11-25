@@ -1,20 +1,21 @@
 {
   "type": "minecraft:block",
+  "random_sequence": "create_satellites_n_rockets:blocks/launch_pad",
   "pools": [
     {
       "rolls": 1,
+      "bonus_rolls": 0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
       "entries": [
         {
           "type": "minecraft:item",
           "name": "create_satellites_n_rockets:launch_pad"
         }
-      ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
       ]
     }
-  ],
-  "random_sequence": "create_satellites_n_rockets:blocks/launch_pad"
+  ]
 }
