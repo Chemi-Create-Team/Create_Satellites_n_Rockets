@@ -11,6 +11,7 @@ import net.minecraft.network.FriendlyByteBuf;
 public record Satellite(UUID id, String name, UUID owner, String ownerName, int tier, int incl, double raan, double phase0, long epoch, int mode) {
     public static final int STANDBY = 0, BEACON = 1, FLASH = 2;
     public static final int MODES = 3;
+    public static final int GEOSTATIONARY_TIER = 3;
     /** Anvil names go to 50; the packet limit below is higher, so a long name can never break the player list. */
     public static final int MAX_NAME = 50;
 
@@ -19,10 +20,10 @@ public record Satellite(UUID id, String name, UUID owner, String ownerName, int 
         ownerName = ownerName.length() > MAX_NAME ? ownerName.substring(0, MAX_NAME) : ownerName;
     }
 
-    /** A new satellite released over the given longitude at the equator, climbing north-east. */
+    /** A new satellite in geostationary orbit: it hangs over the equator at the given longitude, as a communications satellite does. */
     public static Satellite deployed(String name, UUID owner, String ownerName, double lonDeg, long now) {
         double raan = Math.toRadians(lonDeg) + 2 * Math.PI * now / OrbitMath.DAY_TICKS;
-        return new Satellite(UUID.randomUUID(), name, owner, ownerName, 0, 2, raan, 0, now, BEACON);
+        return new Satellite(UUID.randomUUID(), name, owner, ownerName, GEOSTATIONARY_TIER, 0, raan, 0, now, BEACON);
     }
 
     public int periodTicks() {

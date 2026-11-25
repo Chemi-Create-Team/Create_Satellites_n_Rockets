@@ -151,13 +151,17 @@ public class RocketGameTests {
         h.assertTrue(data.find(a.id()).mode() == Satellite.BEACON, "a stranger cannot change the mode");
         c.press(owner, ConsoleButton.MODE, true);
         h.assertTrue(data.find(a.id()).mode() == Satellite.FLASH, "the owner can");
+        h.assertTrue(data.find(a.id()).tier() == 3 && data.find(a.id()).incl() == 0, "a satellite starts geostationary");
         c.press(owner, ConsoleButton.ALTITUDE, true);
-        h.assertTrue(data.find(a.id()).tier() == 1, "right half of the altitude dial steps up");
+        h.assertTrue(data.find(a.id()).tier() == 3, "right half of the altitude dial stops at the top");
+        c.press(owner, ConsoleButton.ALTITUDE, false);
+        h.assertTrue(data.find(a.id()).tier() == 2, "left half steps down");
         c.press(owner, ConsoleButton.ALTITUDE, false);
         c.press(owner, ConsoleButton.ALTITUDE, false);
-        h.assertTrue(data.find(a.id()).tier() == 0, "left half steps down and stops at the lowest");
+        c.press(owner, ConsoleButton.ALTITUDE, false);
+        h.assertTrue(data.find(a.id()).tier() == 0, "and stops at the lowest");
         c.press(owner, ConsoleButton.INCLINATION, true);
-        h.assertTrue(data.find(a.id()).incl() == 3, "inclination steps up, 55 to 90 degrees");
+        h.assertTrue(data.find(a.id()).incl() == 1, "inclination steps up");
 
         c.press(stranger, ConsoleButton.DEORBIT, true);
         c.press(stranger, ConsoleButton.DEORBIT, true);

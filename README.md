@@ -15,8 +15,9 @@ Everything happens in the normal world. There is no trip to space.
 3. Give the pad a **redstone signal** (a new one: a pad that is already powered does not fire when you fill it later). The rocket climbs for a few seconds, releases the satellite and is gone. If the pad is
    broken before launch, the satellite drops as an item.
 
-The satellite is released over the launch longitude in a low orbit that is tilted 55 degrees, so it crosses the sky at a
-different place on every pass.
+The satellite is released into **geostationary orbit** over the equator at the launch longitude, like a communications
+satellite: it hangs over one spot of the world and never moves. Step it down with the altitude dial and tilt it with the
+inclination dial to have it cross the sky instead.
 
 ## Ground Control Console
 
@@ -42,12 +43,12 @@ Orbit periods are scaled to the game: the lowest orbit takes 2 minutes, the high
 
 ## The sky
 
-At night every satellite above the horizon is a bright dot with a trail; **beacon** is steady, **flash** blinks, **standby**
-is dim. You see them from the spot where you stand: on the map's scale a pass overhead lasts about ten seconds.
+At night every satellite above the horizon is a bright dot (a trail too, when it moves); **beacon** is steady, **flash** blinks, **standby**
+is dim. You see them from the spot where you stand. A geostationary satellite stays at one place in the sky; a low one crosses it in about ten seconds.
 
 ## Commands (operators)
 
-`/satellite list`, `/satellite add <name> [tier 0-3]`, `/satellite remove <name>`.
+`/satellite list`, `/satellite add <name> [tier 0-3]` (geostationary unless a lower tier is given), `/satellite remove <name>`.
 
 ## Building
 

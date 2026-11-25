@@ -10,7 +10,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
-/** /satellite list|add|remove for operators: list every satellite with its current position, or place and delete them directly. */
+/** /satellite list|add|remove for operators (add makes a geostationary one unless given a lower tier): list every satellite with its current position, or place and delete them directly. */
 public final class SatelliteCommand {
     private SatelliteCommand() {}
 
@@ -18,7 +18,7 @@ public final class SatelliteCommand {
         d.register(Commands.literal("satellite").requires(s -> s.hasPermission(2))
                 .then(Commands.literal("list").executes(c -> list(c.getSource())))
                 .then(Commands.literal("add").then(Commands.argument("name", StringArgumentType.word())
-                        .executes(c -> add(c.getSource(), StringArgumentType.getString(c, "name"), 0))
+                        .executes(c -> add(c.getSource(), StringArgumentType.getString(c, "name"), Satellite.GEOSTATIONARY_TIER))
                         .then(Commands.argument("tier", IntegerArgumentType.integer(0, 3))
                                 .executes(c -> add(c.getSource(), StringArgumentType.getString(c, "name"), IntegerArgumentType.getInteger(c, "tier"))))))
                 .then(Commands.literal("remove").then(Commands.argument("name", StringArgumentType.word()).executes(c -> remove(c.getSource(), StringArgumentType.getString(c, "name"))))));
@@ -42,7 +42,7 @@ public final class SatelliteCommand {
         var data = SatelliteData.get(src.getServer());
         long now = src.getServer().overworld().getGameTime();
         var id = src.getEntity() != null ? src.getEntity().getUUID() : java.util.UUID.nameUUIDFromBytes("server".getBytes());
-        Satellite s = Satellite.deployed(name, id, src.getTextName(), OrbitMath.lonOf(src.getPosition().x), now).retuned(tier, 2, now);
+        Satellite s = Satellite.deployed(name, id, src.getTextName(), OrbitMath.lonOf(src.getPosition().x), now).retuned(tier, tier == Satellite.GEOSTATIONARY_TIER ? 0 : 2, now);
         data.put(src.getServer(), s);
         src.sendSuccess(() -> Component.literal(position(s, now)), true);
         return 1;

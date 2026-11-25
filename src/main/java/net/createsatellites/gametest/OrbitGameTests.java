@@ -133,13 +133,21 @@ public class OrbitGameTests {
         h.succeed();
     }
 
-    /** Where the spawn is, a freshly launched satellite passes over at least twice in two days, each pass long enough to watch. */
+    /** A launched satellite is geostationary: fixed over the launch longitude. Stepped down to a low tilted orbit it crosses the sky. */
     @GameTest(template = "test_empty")
-    public static void aLaunchedSatelliteCrossesTheSkyOfItsLaunchSite(GameTestHelper h) {
-        Satellite s = Satellite.deployed("T", OWNER, "o", 0, 0);
+    public static void aLaunchedSatelliteHangsOverItsLaunchSiteAndCrossesTheSkyWhenLowered(GameTestHelper h) {
+        Satellite geo = Satellite.deployed("T", OWNER, "o", 40, 777);
+        for (long t : new long[] {777, 5000, 24000 * 3 + 5}) {
+            double[] p = OrbitMath.subpoint(geo, t);
+            near(h, p[0], 0, 1e-9, "on the equator");
+            near(h, Math.toDegrees(p[1]), 40, 1e-6, "over the launch longitude at tick " + t);
+            h.assertTrue(OrbitMath.lookFromBlock(geo, t, 40000, 0).elevation() > Math.toRadians(89), "overhead from the launch site");
+        }
+        h.assertTrue(OrbitMath.lookFromBlock(geo, 0, 40000 + 150000, 0).elevation() < 0, "below the horizon on the far side of the world");
+        Satellite s = geo.retuned(0, 2, 0);
         int passes = 0, longest = 0, run = 0;
         for (int t = 0; t <= 2 * 24000; t += 4) {
-            boolean up = OrbitMath.lookFromBlock(s, t, 0, 0).elevation() > Math.toRadians(5);
+            boolean up = OrbitMath.lookFromBlock(s, t, 40000, 0).elevation() > Math.toRadians(5);
             if (up) run += 4;
             else {
                 if (run > 0) passes++;
@@ -147,8 +155,8 @@ public class OrbitGameTests {
                 run = 0;
             }
         }
-        CreateSatellites.LOGGER.info("Launch-site passes in two days: {}, longest {} ticks", passes, longest);
-        h.assertTrue(passes >= 2, "at least two visible passes in two days, got " + passes);
+        CreateSatellites.LOGGER.info("Low-orbit passes in two days: {}, longest {} ticks", passes, longest);
+        h.assertTrue(passes >= 2, "a lowered satellite passes over at least twice in two days, got " + passes);
         h.assertTrue(longest >= 60, "a pass lasts at least three seconds, got " + longest);
         h.succeed();
     }
