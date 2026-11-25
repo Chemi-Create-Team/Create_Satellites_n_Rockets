@@ -6,5 +6,7 @@
   "block.create_satellites_n_rockets.station_core": "宇宙ステーションコア",
   "itemGroup.create_satellites_n_rockets": "Create: 人工衛星とロケット",
   "message.create_satellites_n_rockets.launch.ok": "リフトオフ！エンジン点火。",
-  "message.create_satellites_n_rockets.launch.failed": "組み立てできませんでした。つながったブロックがないか、4096ブロックを超えています。"
+  "message.create_satellites_n_rockets.launch.failed": "組み立てできませんでした。つながったブロックがないか、4096ブロックを超えています。",
+  "message.create_satellites_n_rockets.launch.ignite": "点火しました。",
+  "message.create_satellites_n_rockets.launch.cutoff": "エンジンを停止しました。"
 }

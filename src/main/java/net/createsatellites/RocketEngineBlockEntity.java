@@ -39,10 +39,14 @@ public class RocketEngineBlockEntity extends BlockEntity implements BlockEntityS
         super(CreateSatellites.ROCKET_ENGINE_BE.get(), pos, state);
     }
 
-    /** Burning is ordered by a redstone signal or by the launch controller, which writes "ignited" into the sub-level. */
+    /**
+     * Burning is ordered by a redstone signal, or by the launch controller writing "ignited" into the sub-level. The controller
+     * only lights engines whose nozzle points down; the others (braking engines) answer to redstone alone.
+     */
     boolean ordered() {
         if (level.hasNeighborSignal(worldPosition)) return true;
-        return Sable.HELPER.getContaining(this) instanceof ServerSubLevel s
+        return getBlockState().getValue(RocketEngineBlock.FACING) == net.minecraft.core.Direction.DOWN
+                && Sable.HELPER.getContaining(this) instanceof ServerSubLevel s
                 && s.getUserDataTag() != null && s.getUserDataTag().getBoolean(LaunchControllerBlock.IGNITED);
     }
 

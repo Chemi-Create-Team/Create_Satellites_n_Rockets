@@ -77,6 +77,14 @@ public class OrbitGameTests {
                 + lit.getPlot().getBoundingBox().volume());
         h.runAfterDelay(12, () -> {
             h.assertTrue(vy(lit) > 5, "fuelled engine pushes the rocket up, vy=" + vy(lit));
+            // switching the ignition off stops the burn
+            var tank = ((RocketEngineBlockEntity) lit.getLevel().getBlockEntity(findEngine(lit))).tank;
+            h.assertTrue(tank.getFluidAmount() < 8000, "the engine has burnt some fuel");
+            LaunchControllerBlock.setIgnited(lit, false);
+            h.runAfterDelay(3, () -> {
+                int left = tank.getFluidAmount();
+                h.runAfterDelay(10, () -> h.assertTrue(tank.getFluidAmount() == left, "no fuel is burnt after cutoff"));
+            });
             // second rocket without fuel, same recipe
             h.setBlock(AIR.east(6), CreateSatellites.LAUNCH_PAD.get().defaultBlockState());
             h.setBlock(AIR.east(6).above(), CreateSatellites.ROCKET_ENGINE.get().defaultBlockState());

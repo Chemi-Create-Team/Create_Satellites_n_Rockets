@@ -14,7 +14,7 @@ NeoForge 1.21.1, Create 6.0.10+, Sable 2.0.6+. Create: Refinery 'n' Reactors is 
 | --- | --- |
 | Launch Pad | Ground that stays behind when a rocket lifts off. Stone, dirt, sand and gravel also stay behind. |
 | Rocket Engine | Burns fuel for thrust, opposite to the nozzle. Fill it by hand with a bucket or by pipe (8000 mB). Redstone fires it. |
-| Launch Controller | Right-click: everything connected to it (up to 4096 blocks) becomes one Sable contraption and every engine on it ignites. |
+| Launch Controller | Right-click: everything connected to it (up to 4096 blocks) becomes one Sable contraption and its downward-pointing engines ignite. Right-click again on the flying ship to cut the engines off or light them again. Engines pointing any other way (braking engines) only answer to redstone. |
 | Satellite Core | Gives a redstone signal while its contraption is in orbit. |
 | Station Core | Reaction wheels: cancels spin and drift. Only works in zero gravity. |
 

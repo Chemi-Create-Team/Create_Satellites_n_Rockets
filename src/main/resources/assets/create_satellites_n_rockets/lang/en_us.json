@@ -6,5 +6,7 @@
   "block.create_satellites_n_rockets.station_core": "Station Core",
   "itemGroup.create_satellites_n_rockets": "Create: Satellites 'n Rockets",
   "message.create_satellites_n_rockets.launch.ok": "Liftoff! Engines are burning.",
-  "message.create_satellites_n_rockets.launch.failed": "Could not assemble: nothing connected, or more than 4096 blocks."
+  "message.create_satellites_n_rockets.launch.failed": "Could not assemble: nothing connected, or more than 4096 blocks.",
+  "message.create_satellites_n_rockets.launch.ignite": "Ignition on.",
+  "message.create_satellites_n_rockets.launch.cutoff": "Engines cut off."
 }

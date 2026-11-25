@@ -6,5 +6,7 @@
   "block.create_satellites_n_rockets.station_core": "空间站核心",
   "itemGroup.create_satellites_n_rockets": "机械动力：卫星与火箭",
   "message.create_satellites_n_rockets.launch.ok": "点火升空！发动机已启动。",
-  "message.create_satellites_n_rockets.launch.failed": "无法组装：没有相连的方块，或超过 4096 个方块。"
+  "message.create_satellites_n_rockets.launch.failed": "无法组装：没有相连的方块，或超过 4096 个方块。",
+  "message.create_satellites_n_rockets.launch.ignite": "已点火。",
+  "message.create_satellites_n_rockets.launch.cutoff": "发动机已关闭。"
 }
