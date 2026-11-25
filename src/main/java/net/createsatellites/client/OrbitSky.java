@@ -56,9 +56,12 @@ public class OrbitSky extends DimensionSpecialEffects {
     @Override
     public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelView, Camera camera, Matrix4f projection,
                              boolean isFoggy, Runnable setupFog) {
+        RenderSystem.disableCull();
+        RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1, 1, 1, 1);
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         var b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
@@ -84,6 +87,8 @@ public class OrbitSky extends DimensionSpecialEffects {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
         RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.enableCull();
         return true;
     }
 
@@ -105,13 +110,14 @@ public class OrbitSky extends DimensionSpecialEffects {
         Vector3f up = dir.cross(right, new Vector3f()).normalize(half);
         Vector3f c = dir.mul(100, new Vector3f());
         var b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        // spin the quad itself: rotating the uv would sample outside the picture at the corners
         float cos = Mth.cos(spin), sin = Mth.sin(spin);
+        Vector3f r2 = new Vector3f(right).mul(cos).add(new Vector3f(up).mul(sin));
+        Vector3f u2 = new Vector3f(up).mul(cos).sub(new Vector3f(right).mul(sin));
         int[][] corner = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
         for (int[] k : corner) {
-            // uv rotated around the middle of the picture so the Earth appears to turn
-            float u = k[0] * cos - k[1] * sin, v = k[0] * sin + k[1] * cos;
-            b.addVertex(m, c.x + right.x * k[0] + up.x * k[1], c.y + right.y * k[0] + up.y * k[1], c.z + right.z * k[0] + up.z * k[1])
-                    .setUv(0.5f + u * 0.5f, 0.5f + v * 0.5f);
+            b.addVertex(m, c.x + r2.x * k[0] + u2.x * k[1], c.y + r2.y * k[0] + u2.y * k[1], c.z + r2.z * k[0] + u2.z * k[1])
+                    .setUv(k[0] < 0 ? 0 : 1, k[1] < 0 ? 0 : 1);
         }
         BufferUploader.drawWithShader(b.buildOrThrow());
     }
