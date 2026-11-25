@@ -36,31 +36,6 @@ the one you want.
 Only the owner of a satellite (or an operator) can change it. Anyone can read it. A **Display Link** pointed at the console
 shows the selected satellite's position on any display.
 
-## Assembly line
-
-A GUI-free robot-arm assembly system. Everything is done by right-clicking, wrenching and feeding blocks with hoppers.
-
-- **Assembly Jig** – the plate the arms build on. Its work area is up to 3x3x3 blocks above it. A wrench switches the recipe (before work starts), an empty hand shows progress. Pipes can fill its 1000 mB tank (used by the spray nozzle).
-- **Industrial Arm** – a yellow-tinted Create mechanical arm that runs on rotation (16 rpm is the recipe speed, faster is quicker; 4 SU impact). Use a tool on it to fit it, an empty hand takes it off, a tool in hand swaps it. Hoppers, funnels, chutes and belts can reach its one-slot tool inventory; pipes fill its own 1000 mB tank.
-- **Tools** (stack size 1): Gripper (places blocks), Welding Torch (seam welds), Laser Cutter (perimeter cut), Spray Nozzle (full spray, uses fluid), Precision Wiring Head (6x6 wire grid with ferrite cores).
-- An arm looks for a jig within 5 blocks, takes the nearest open step of the current stage that its tool can do, fetches the material from chests, depots or belts within 5 blocks, moves and works. 2 to 4 arms can share a jig; a step goes to one arm only, steps of one stage run in parallel and the next stage waits.
-- The work is drawn live: a weld bead cooling from white to silver, wires and ferrite cores, the laser groove, the paint film. When the last step is done the temporary blocks vanish, the product drops and steam rises.
-
-Recipes are data: `data/<namespace>/assembly/<name>.json`. Samples: `welded_iron_beam` (two iron blocks, seam weld) and `magnetic_core_memory` (iron frame, wiring grid, weld the ends).
-
-```json
-{
-  "size": [3, 1, 3],
-  "stages": [
-    [ { "pos": [1, 0, 1], "action": "place", "tool": "gripper", "block": "minecraft:iron_block" } ],
-    [ { "pos": [1, 0, 1], "action": "process", "tool": "wiring_head", "pattern": "grid_wire", "consume": "minecraft:copper_ingot", "time": 120 } ]
-  ],
-  "result": { "id": "create_aerospace_engineering:magnetic_core_memory", "count": 1 }
-}
-```
-
-`pos` is counted from the block above the jig. Patterns: `seam_weld`, `perimeter_cut`, `grid_wire`, `full_spray` (needs `"fluid": {"id": "minecraft:water", "amount": 100}`). `time` is ticks at 16 rpm.
-
 ## Where is "where"
 
 The world is a map of the Earth in which one degree is 1000 blocks: x is longitude (east is plus) and -z is latitude (north is

@@ -2,8 +2,6 @@
   "replace": false,
   "values": [
     "create_aerospace_engineering:launch_pad",
-    "create_aerospace_engineering:ground_console",
-    "create_aerospace_engineering:assembly_jig",
-    "create_aerospace_engineering:industrial_arm"
+    "create_aerospace_engineering:ground_console"
   ]
 }
