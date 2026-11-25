@@ -10,7 +10,7 @@ CAE（旧名 Create: Satellites 'n' Rockets）は、ロケットを発射台か�
 | ID・版 | `gradle.properties` と `CreateAerospace.MOD_ID`。mod ID `create_aerospace_engineering`、Java `net.createaerospace` |
 | 表示名 | `mod_name`（`gradle.properties`）と `itemGroup.create_aerospace_engineering`（`lang/*.json`）、READMEの題名。現行は「Create: Aerospace Engineering」 |
 | 依存 | NeoForge 21.1.228+（Minecraft 1.21.1）、Create 6.0.10+。RnRは任意。版の基準は `gradle.properties` |
-| 登録 | `CreateAerospace`（`DeferredRegister`）。ブロック2種（発射台・地上管制コンソール）、アイテム1種（人工衛星）、エンティティ1種（ロケット）、ブロックエンティティ2種、Display Link用の表示ソース1つ、クリエイティブタブ1つ |
+| 登録 | `CreateAerospace`（`DeferredRegister`）。ブロック4種（発射台・地上管制コンソール・組立ジグ・産業用アーム）、アイテム8種（人工衛星・工具5種・溶接鉄骨・磁気コアメモリ）、エンティティ1種（ロケット）、ブロックエンティティ4種、Display Link用の表示ソース1つ、クリエイティブタブ1つ |
 | リソース | `assets/` と `data/` は手書き。生成スクリプトは無く、直接編集してよい |
 | 検証 | ローカルのみ（CIなし）。[文書と検証](#文書と検証) |
 
@@ -66,3 +66,8 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 
 - `build/`・`run/`・`logs/`・`.gradle/` はコミットしない（`.gitignore` 済み）。
 - 作業で出た一時ファイル・ログ・複製は終わる前に消す。
+
+## 組立ライン（assembly）
+- `assembly/` のレシピ・軌道（`Trajectory`）はサーバーとクライアントで共有する純粋な計算です。サーバーが腕の目標点を決め、クライアントが同じ軌道でオーバーレイを描きます。
+- 予約（どの腕がどの工程を持つか）は保存しません。ジグが20tickごとに、腕が保持していない予約を解放します。
+- 腕の関節角はCreateの `ArmAngleTarget` をリフレクションで使います（AT/Mixinは使いません）。Flywheelのインスタンス描画は使わず、通常のBERで描きます。

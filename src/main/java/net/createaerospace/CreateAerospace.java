@@ -2,6 +2,13 @@ package net.createaerospace;
 
 import com.simibubi.create.api.behaviour.display.DisplaySource;
 import com.simibubi.create.api.registry.CreateRegistries;
+import net.createaerospace.assembly.AssemblyRecipes;
+import net.createaerospace.assembly.ToolType;
+import net.createaerospace.block.AssemblyJigBlock;
+import net.createaerospace.block.AssemblyJigBlockEntity;
+import net.createaerospace.block.IndustrialArmBlock;
+import net.createaerospace.block.IndustrialArmBlockEntity;
+import net.createaerospace.item.AssemblyToolItem;
 import net.createaerospace.block.GroundConsoleBlock;
 import net.createaerospace.block.GroundConsoleBlockEntity;
 import net.createaerospace.block.LaunchPadBlock;
@@ -66,12 +73,27 @@ public class CreateAerospace {
     public static final DeferredBlock<LaunchPadBlock> LAUNCH_PAD = BLOCKS.registerBlock("launch_pad", LaunchPadBlock::new, metal());
     public static final DeferredBlock<GroundConsoleBlock> GROUND_CONSOLE = BLOCKS.registerBlock("ground_console", GroundConsoleBlock::new, metal());
 
+    public static final DeferredBlock<AssemblyJigBlock> ASSEMBLY_JIG = BLOCKS.registerBlock("assembly_jig", AssemblyJigBlock::new, metal());
+    public static final DeferredBlock<IndustrialArmBlock> INDUSTRIAL_ARM = BLOCKS.registerBlock("industrial_arm", IndustrialArmBlock::new, metal().noOcclusion());
+
+    public static final java.util.Map<ToolType, DeferredItem<AssemblyToolItem>> TOOLS = new java.util.EnumMap<>(ToolType.class);
+    static {
+        for (ToolType t : ToolType.values()) TOOLS.put(t, ITEMS.registerItem(t.id(), p -> new AssemblyToolItem(t, p), new Item.Properties()));
+    }
+    public static final DeferredItem<Item> WELDED_IRON_BEAM = ITEMS.registerSimpleItem("welded_iron_beam");
+    public static final DeferredItem<Item> MAGNETIC_CORE_MEMORY = ITEMS.registerSimpleItem("magnetic_core_memory");
+
     public static final DeferredItem<SatelliteItem> SATELLITE = ITEMS.registerItem("satellite", SatelliteItem::new, new Item.Properties().stacksTo(16));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
             BLOCK_ENTITIES.register("launch_pad", () -> BlockEntityType.Builder.of(LaunchPadBlockEntity::new, LAUNCH_PAD.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GroundConsoleBlockEntity>> GROUND_CONSOLE_BE =
             BLOCK_ENTITIES.register("ground_console", () -> BlockEntityType.Builder.of(GroundConsoleBlockEntity::new, GROUND_CONSOLE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AssemblyJigBlockEntity>> ASSEMBLY_JIG_BE =
+            BLOCK_ENTITIES.register("assembly_jig", () -> BlockEntityType.Builder.of(AssemblyJigBlockEntity::new, ASSEMBLY_JIG.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndustrialArmBlockEntity>> INDUSTRIAL_ARM_BE =
+            BLOCK_ENTITIES.register("industrial_arm", () -> BlockEntityType.Builder.of(IndustrialArmBlockEntity::new, INDUSTRIAL_ARM.get()).build(null));
 
     public static final DeferredHolder<EntityType<?>, EntityType<RocketEntity>> ROCKET = ENTITIES.register("rocket",
             () -> EntityType.Builder.<RocketEntity>of(RocketEntity::new, MobCategory.MISC).sized(1f, 5f)
@@ -83,6 +105,8 @@ public class CreateAerospace {
     static {
         ITEMS.registerSimpleBlockItem(LAUNCH_PAD);
         ITEMS.registerSimpleBlockItem(GROUND_CONSOLE);
+        ITEMS.registerSimpleBlockItem(ASSEMBLY_JIG);
+        ITEMS.registerSimpleBlockItem(INDUSTRIAL_ARM);
         TABS.register("main", () -> CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup." + MOD_ID))
                 .icon(() -> SATELLITE.get().getDefaultInstance())
@@ -97,12 +121,20 @@ public class CreateAerospace {
         ENTITIES.register(bus);
         TABS.register(bus);
         DISPLAY_SOURCES.register(bus);
-        bus.addListener(RegisterCapabilitiesEvent.class, e ->
-                e.registerBlockEntity(Capabilities.FluidHandler.BLOCK, LAUNCH_PAD_BE.get(), (be, side) -> be.tank));
+        bus.addListener(RegisterCapabilitiesEvent.class, e -> {
+            e.registerBlockEntity(Capabilities.FluidHandler.BLOCK, LAUNCH_PAD_BE.get(), (be, side) -> be.tank);
+            e.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ASSEMBLY_JIG_BE.get(), (be, side) -> be.tank);
+            e.registerBlockEntity(Capabilities.FluidHandler.BLOCK, INDUSTRIAL_ARM_BE.get(), (be, side) -> be.tank);
+            e.registerBlockEntity(Capabilities.ItemHandler.BLOCK, INDUSTRIAL_ARM_BE.get(), (be, side) -> be.toolSlot);
+        });
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.AddReloadListenerEvent.class, e -> e.addListener(new AssemblyRecipes()));
         bus.addListener(RegisterPayloadHandlersEvent.class, e ->
                 e.registrar("1").playToClient(SatellitesPayload.TYPE, SatellitesPayload.CODEC, SatellitesPayload::handle));
         bus.addListener(FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
-                DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get())));
+                {
+            DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get());
+            com.simibubi.create.api.stress.BlockStressValues.IMPACTS.register(INDUSTRIAL_ARM.get(), () -> 4.0);
+        }));
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, e -> {
             if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer p)
                 PacketDistributor.sendToPlayer(p, new SatellitesPayload(SatelliteData.get(p.server).list()));
