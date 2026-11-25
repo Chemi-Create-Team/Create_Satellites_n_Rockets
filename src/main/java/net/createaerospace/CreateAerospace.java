@@ -102,7 +102,10 @@ public class CreateAerospace {
         bus.addListener(RegisterPayloadHandlersEvent.class, e ->
                 e.registrar("1").playToClient(SatellitesPayload.TYPE, SatellitesPayload.CODEC, SatellitesPayload::handle));
         bus.addListener(FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
-                DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get())));
+                {
+            DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get());
+            net.createaerospace.compat.cfs.CfsCompat.register();
+        }));
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, e -> {
             if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer p)
                 PacketDistributor.sendToPlayer(p, new SatellitesPayload(SatelliteData.get(p.server).list()));

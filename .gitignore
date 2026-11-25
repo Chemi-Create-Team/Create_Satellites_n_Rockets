@@ -6,6 +6,7 @@ out/
 *.class
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
+!libs/*.jar
 hs_err_pid*
 replay_pid*
 .idea/

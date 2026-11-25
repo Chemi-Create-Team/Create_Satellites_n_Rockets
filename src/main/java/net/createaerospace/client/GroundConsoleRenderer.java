@@ -7,8 +7,8 @@ import net.createaerospace.CreateAerospace;
 import net.createaerospace.block.ConsoleButton;
 import net.createaerospace.block.GroundConsoleBlock;
 import net.createaerospace.block.GroundConsoleBlockEntity;
-import net.createaerospace.orbit.OrbitMath;
 import net.createaerospace.orbit.Satellite;
+import net.createaerospace.orbit.SatelliteReadout;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -73,22 +73,8 @@ public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleB
     }
 
     private static java.util.List<Component> lines(GroundConsoleBlockEntity be, Satellite s, double tick) {
-        String k = "console.create_aerospace_engineering.";
-        if (s == null) return java.util.List.of(Component.translatable(k + "none"), Component.translatable(k + "none_hint"));
-        double[] p = OrbitMath.subpoint(s, tick);
-        int[] block = OrbitMath.groundBlock(p);
-        var pos = be.getBlockPos();
-        var look = OrbitMath.lookFromBlock(s, tick, pos.getX() + .5, pos.getZ() + .5);
-        return java.util.List.of(
-                Component.translatable(k + "title", s.name(), be.selectedIndex() + 1, be.count()),
-                Component.translatable(k + "pos", OrbitMath.fmtLat(p[0]), OrbitMath.fmtLon(p[1])),
-                Component.translatable(k + "block", block[0], block[1]),
-                Component.translatable(k + "orbit", s.altKm(), OrbitMath.INCLINATION_DEG[s.incl()], String.format("%.1f", s.periodTicks() / 1200.0)),
-                Component.translatable(k + "mode", Component.translatable(k + "mode." + s.mode())),
-                look.elevation() > 0
-                        ? Component.translatable(k + "above", (int) Math.toDegrees(look.elevation()), (int) Math.floorMod((long) Math.toDegrees(look.azimuth()), 360L))
-                        : Component.translatable(k + "below"),
-                Component.translatable(k + "owner", s.ownerName()));
+        if (s == null) return SatelliteReadout.noneLines();
+        return SatelliteReadout.of(s, be.selectedIndex(), be.count(), tick, be.getBlockPos()).lines();
     }
 
     /** Four ticks above a dial, lit up to the current setting. */

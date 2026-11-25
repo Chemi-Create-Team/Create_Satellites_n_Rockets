@@ -18,6 +18,11 @@ public enum ConsoleButton {
         this.radius = radius;
     }
 
+    /** Pressed on its left half it steps down, on its right half up. */
+    public boolean dial() {
+        return this == ALTITUDE || this == INCLINATION;
+    }
+
     public String label() {
         return name().toLowerCase(Locale.ROOT);
     }

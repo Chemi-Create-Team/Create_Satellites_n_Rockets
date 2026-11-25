@@ -48,6 +48,19 @@ Orbit periods are scaled to the game: the lowest orbit takes 2 minutes, the high
 At night every satellite above the horizon is a bright dot (a trail too, when it moves); **beacon** is steady, **flash** blinks, **standby**
 is dim. You see them from the spot where you stand. A geostationary satellite stays at one place in the sky; a low one crosses it in about ten seconds.
 
+## Control Computer (Create: Frontier Science)
+
+If [Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science) 0.3.17 or newer is installed, the ground
+console is also an app of its Control Computer: open **Extra apps** on a display board and pick **Satellites**. It is optional;
+without Frontier Science nothing changes.
+
+- It shows the satellite the computer has selected: name, owner, latitude and longitude, the block coordinates under it, altitude,
+  inclination, period, mode, and whether it is above the horizon of the computer.
+- It has the console's buttons: **previous**, **next**, **mode**, altitude and inclination (**-** and **+**), and **deorbit**
+  (the first press asks for confirmation, the second within ten seconds deorbits).
+- It does not need a Ground Control Console block. Each computer keeps its own selection (forgotten on a restart). Only the owner of a
+  satellite (or an operator) can change it, as on the console. The map is not available there.
+
 ## Commands (operators)
 
 `/satellite list`, `/satellite add <name> [tier 0-3]` (geostationary unless a lower tier is given), `/satellite remove <name>`.

@@ -185,4 +185,22 @@ public class OrbitGameTests {
         h.assertTrue(!net.minecraft.world.level.material.Fluids.WATER.is(CreateAerospace.ROCKET_FUEL), "water does not");
         h.succeed();
     }
+
+    @GameTest(template = "test_empty")
+    public static void theControlComputerAppHasEveryConsoleButtonExceptTheMap(GameTestHelper h) {
+        var ids = net.createaerospace.orbit.SatelliteControl.appButtons();
+        h.assertTrue(ids.size() <= 12 && ids.stream().distinct().count() == ids.size(), "ids fit the app API and are unique");
+        for (var b : net.createaerospace.block.ConsoleButton.values()) {
+            if (b == net.createaerospace.block.ConsoleButton.MAP) continue;
+            for (boolean up : new boolean[] {false, true}) {
+                String id = b.dial() ? b.label() + (up ? "_up" : "_down") : b.label();
+                h.assertTrue(ids.contains(id), "app button " + id);
+                var p = net.createaerospace.orbit.SatelliteControl.parse(id);
+                h.assertTrue(p != null && p.button() == b && (!b.dial() || p.up() == up), "id " + id + " maps back");
+            }
+        }
+        h.assertTrue(net.createaerospace.orbit.SatelliteControl.parse("map") == null, "the map is not an app button");
+        net.createaerospace.compat.cfs.CfsCompat.register(); // without Create: Frontier Science it must do nothing
+        h.succeed();
+    }
 }

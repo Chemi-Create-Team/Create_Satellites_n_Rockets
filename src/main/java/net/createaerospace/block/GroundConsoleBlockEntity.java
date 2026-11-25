@@ -6,6 +6,7 @@ import net.createaerospace.CreateAerospace;
 import net.createaerospace.client.ClientSatellites;
 import net.createaerospace.orbit.OrbitMath;
 import net.createaerospace.orbit.Satellite;
+import net.createaerospace.orbit.SatelliteControl;
 import net.createaerospace.orbit.SatelliteData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -46,9 +47,7 @@ public class GroundConsoleBlockEntity extends BlockEntity {
 
     /** The selected satellite; the first one while nothing valid is selected. */
     public Satellite selected() {
-        List<Satellite> all = all();
-        for (Satellite s : all) if (s.id().equals(selected)) return s;
-        return all.isEmpty() ? null : all.get(0);
+        return SatelliteControl.pick(all(), selected);
     }
 
     public int selectedIndex() {
@@ -87,31 +86,23 @@ public class GroundConsoleBlockEntity extends BlockEntity {
                     say(player, "console.create_aerospace_engineering.denied");
                     return;
                 }
-                switch (button) {
-                    case MODE -> data.put(level.getServer(), s.withMode((s.mode() + 1) % Satellite.MODES));
-                    case ALTITUDE -> data.put(level.getServer(), s.retuned(clamp(s.tier() + (rightHalf ? 1 : -1), OrbitMath.ALT_KM.length), s.incl(), now));
-                    case INCLINATION -> data.put(level.getServer(), s.retuned(s.tier(), clamp(s.incl() + (rightHalf ? 1 : -1), OrbitMath.INCLINATION_DEG.length), now));
-                    case DEORBIT -> {
-                        if (!guardOpen()) {
-                            guardOpenedAt = now;
-                            level.playSound(null, worldPosition, SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.BLOCKS, 1f, 1.2f);
-                        } else {
-                            guardOpenedAt = Long.MIN_VALUE / 2;
-                            data.remove(level.getServer(), s.id());
-                            level.playSound(null, worldPosition, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 1f, 1f);
-                        }
+                if (button == ConsoleButton.DEORBIT) {
+                    if (!guardOpen()) {
+                        guardOpenedAt = now;
+                        level.playSound(null, worldPosition, SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.BLOCKS, 1f, 1.2f);
+                    } else {
+                        guardOpenedAt = Long.MIN_VALUE / 2;
+                        SatelliteControl.apply(level.getServer(), s, button, rightHalf, now);
+                        level.playSound(null, worldPosition, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 1f, 1f);
                     }
-                    default -> {}
+                } else {
+                    SatelliteControl.apply(level.getServer(), s, button, rightHalf, now);
                 }
             }
         }
         level.playSound(null, worldPosition, SoundEvents.STONE_BUTTON_CLICK_ON, SoundSource.BLOCKS, .6f, 1.4f);
         setChanged();
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-    }
-
-    private static int clamp(int v, int size) {
-        return Math.max(0, Math.min(size - 1, v));
     }
 
     private static void say(net.minecraft.world.entity.player.Player p, String key) {

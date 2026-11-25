@@ -37,3 +37,11 @@ type = "optional"
 versionRange = "[0.1.0,)"
 ordering = "AFTER"
 side = "BOTH"
+
+# The ground console also shows up as an app of the Control Computer when it is installed.
+[[dependencies."${mod_id}"]]
+modId = "create_frontier_science"
+type = "optional"
+versionRange = "[0.3.17,)"
+ordering = "AFTER"
+side = "BOTH"

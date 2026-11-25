@@ -44,6 +44,8 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 - 衛星の一覧は `SatellitesPayload` でログイン時と変更時に全プレイヤーへ送る。名前の長さは `Satellite.MAX_NAME` で切る（パケット上限を超えるとプレイヤーが切断されるため）。
 - 夜空は `RenderLevelStageEvent` の `AFTER_SKY` で素のテッセレータを使う（`client/NightSky`）。シェーダーパックが空を置き換える場合の非対応は既知の制限。
 - Mixinを使わず、Createの公開APIを使う。単純化で上限を作る箇所には `ponytail:` コメントで上限と拡張方法を書く。
+- 地上管制コンソールは、CFS（Create: Frontier Science）0.3.17以降があるときだけ、共通制御コンピュータの「追加アプリ」としても使える（`compat/cfs`）。**任意の連携で、必須依存にしない。** `net.createfrontier.*` を参照してよいのは `CfsComputerApp` だけで、`CfsCompat` が `ModList` と `ComputerApps` クラスの有無を確かめてから呼ぶ。`libs/` のAPI JAR（`compileOnly`）は、CFSの `dist/` の公式のものをそのまま使い、版を上げるときはハッシュを `build.gradle` のコメントに書く。CFS本体は変更しない。
+- **コンソールの機能を変えたら、コンピュータのアプリも同じ変更で直す。** 表示は `SatelliteReadout`（コンソールの画面とアプリの共通）、操作は `SatelliteControl`（コンソールのブロックとアプリの共通）に書く。コンソールにボタンや表示項目を足したときは、`SatelliteControl.appButtons()` の対象か、アプリに出せない理由（マップのようなクライアント画面）を決め、`CfsComputerApp` の読み取り・ボタンと `computer.*` の翻訳（3言語）、両方のREADMEを更新する。アプリのパネルは読み取り12項目・ボタン12個まで。
 
 ## 文書と検証
 
