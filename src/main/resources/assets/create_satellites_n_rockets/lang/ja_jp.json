@@ -4,7 +4,7 @@
   "block.create_satellites_n_rockets.launch_controller": "発射コントローラー",
   "block.create_satellites_n_rockets.satellite_core": "人工衛星コア",
   "block.create_satellites_n_rockets.station_core": "宇宙ステーションコア",
-  "itemGroup.create_satellites_n_rockets": "Create: 人工衛星とロケット",
+  "itemGroup.create_satellites_n_rockets": "Create: 航空宇宙工学",
   "message.create_satellites_n_rockets.launch.ok": "リフトオフ！エンジン点火。",
   "message.create_satellites_n_rockets.launch.failed": "組み立てできませんでした。つながったブロックがないか、4096ブロックを超えています。",
   "message.create_satellites_n_rockets.launch.ignite": "点火しました。",

@@ -1,4 +1,4 @@
-# Create: Satellites 'n' Rockets
+# Create: Aerospace Engineering
 
 Rockets, satellites and space stations for [Sable](https://modrinth.com/mod/sable) contraptions, built to sit next to
 [Create: Refinery 'n' Reactors](https://github.com/Chemi-Create-Team/chemicreate-sub).
