@@ -12,7 +12,7 @@ Everything happens in the normal world. There is no trip to space.
    methanol, low-sulfur diesel and hydrogen work with Refinery 'n' Reactors (tag `create_satellites_n_rockets:rocket_fuel`).
 2. Use a **Satellite** on the pad: a rocket (an ordinary entity with a 3D model) stands up on it. Rename the satellite on an
    anvil to name it. Right-click the pad with an empty hand to read fuel and loading.
-3. Give the pad a **redstone signal**. The rocket climbs for a few seconds, releases the satellite and is gone. If the pad is
+3. Give the pad a **redstone signal** (a new one: a pad that is already powered does not fire when you fill it later). The rocket climbs for a few seconds, releases the satellite and is gone. If the pad is
    broken before launch, the satellite drops as an item.
 
 The satellite is released over the launch longitude in a low orbit that is tilted 55 degrees, so it crosses the sky at a

@@ -21,8 +21,8 @@ import org.joml.Vector3f;
  */
 public final class NightSky {
     private static final float DISTANCE = 100;
-    private static final int TRAIL_POINTS = 14;
-    private static final double TRAIL_STEP_TICKS = 5;
+    private static final int TRAIL_POINTS = 20;
+    private static final double TRAIL_STEP_TICKS = 3;
 
     private NightSky() {}
 
@@ -55,19 +55,27 @@ public final class NightSky {
             var now = OrbitMath.lookFromBlock(s, tick, cam.x, cam.z);
             if (now.elevation() < -0.05) continue;
             float glow = switch (s.mode()) {
-                case Satellite.FLASH -> (float) (0.5 + 0.5 * Math.sin(tick * 0.9));
+                case Satellite.FLASH -> (float) (0.45 + 0.55 * Math.sin(tick * 0.9));
                 case Satellite.BEACON -> 1f;
                 default -> 0.35f;
             };
-            float size = s.mode() == Satellite.STANDBY ? 0.5f : 0.9f;
-            for (int k = TRAIL_POINTS; k >= 0; k--) {
+            float size = s.mode() == Satellite.STANDBY ? 0.7f : 1.3f;
+            // the trail is a ribbon through the recent positions, thinner and fainter the older it is
+            Vector3f prev = null;
+            float prevWidth = 0, prevAlpha = 0;
+            for (int k = 0; k <= TRAIL_POINTS; k++) {
                 var l = k == 0 ? now : OrbitMath.lookFromBlock(s, tick - k * TRAIL_STEP_TICKS, cam.x, cam.z);
-                if (l.elevation() < 0) continue;
+                if (l.elevation() < 0) { prev = null; continue; }
+                double[] dir = OrbitMath.direction(l);
+                Vector3f p = new Vector3f((float) dir[0], (float) dir[1], (float) dir[2]).normalize(DISTANCE);
                 float fade = 1f - (float) k / (TRAIL_POINTS + 1);
-                float a = dark * glow * (k == 0 ? 1f : 0.55f * fade * fade);
-                point(b, m, OrbitMath.direction(l), k == 0 ? size : size * (0.35f + 0.4f * fade), a);
-                any = true;
+                float width = size * 0.45f * (0.25f + 0.75f * fade), alpha = dark * glow * 0.8f * fade * fade;
+                if (prev != null) { ribbon(b, m, prev, p, prevWidth, width, prevAlpha, alpha); any = true; }
+                prev = p; prevWidth = width; prevAlpha = alpha;
             }
+            point(b, m, OrbitMath.direction(now), size, dark * glow);
+            point(b, m, OrbitMath.direction(now), size * 3.2f, dark * glow * 0.16f);
+            any = true;
         }
         if (any) BufferUploader.drawWithShader(b.buildOrThrow());
         RenderSystem.defaultBlendFunc();
@@ -89,5 +97,16 @@ public final class NightSky {
         b.addVertex(m, c.x + right.x - up.x, c.y + right.y - up.y, c.z + right.z - up.z).setColor(255, 250, 225, a);
         b.addVertex(m, c.x + right.x + up.x, c.y + right.y + up.y, c.z + right.z + up.z).setColor(255, 250, 225, a);
         b.addVertex(m, c.x - right.x + up.x, c.y - right.y + up.y, c.z - right.z + up.z).setColor(255, 250, 225, a);
+    }
+
+    private static void ribbon(BufferBuilder b, Matrix4f m, Vector3f from, Vector3f to, float w0, float w1, float a0, float a1) {
+        Vector3f side = from.cross(new Vector3f(to).sub(from), new Vector3f());
+        if (side.lengthSquared() < 1e-8f) return;
+        side.normalize();
+        int c0 = Math.max(0, Math.min(255, (int) (a0 * 255))), c1 = Math.max(0, Math.min(255, (int) (a1 * 255)));
+        b.addVertex(m, from.x - side.x * w0, from.y - side.y * w0, from.z - side.z * w0).setColor(255, 250, 225, c0);
+        b.addVertex(m, from.x + side.x * w0, from.y + side.y * w0, from.z + side.z * w0).setColor(255, 250, 225, c0);
+        b.addVertex(m, to.x + side.x * w1, to.y + side.y * w1, to.z + side.z * w1).setColor(255, 250, 225, c1);
+        b.addVertex(m, to.x - side.x * w1, to.y - side.y * w1, to.z - side.z * w1).setColor(255, 250, 225, c1);
     }
 }

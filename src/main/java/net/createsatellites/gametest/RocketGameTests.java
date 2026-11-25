@@ -170,4 +170,17 @@ public class RocketGameTests {
         data.remove(server, b.id());
         h.succeed();
     }
+
+    @GameTest(template = "test_empty")
+    public static void aPadKeepsItsFuelWhenSaved(GameTestHelper h) {
+        h.setBlock(PAD, CreateSatellites.LAUNCH_PAD.get().defaultBlockState());
+        var pad = (LaunchPadBlockEntity) h.getBlockEntity(PAD);
+        pad.tank.fill(new FluidStack(Fluids.LAVA, 3500), IFluidHandler.FluidAction.EXECUTE);
+        var access = h.getLevel().registryAccess();
+        var saved = pad.saveWithoutMetadata(access);
+        pad.tank.setFluid(FluidStack.EMPTY);
+        pad.loadWithComponents(saved, access);
+        h.assertTrue(pad.tank.getFluidAmount() == 3500 && pad.tank.getFluid().getFluid() == Fluids.LAVA, "fuel survives saving");
+        h.succeed();
+    }
 }

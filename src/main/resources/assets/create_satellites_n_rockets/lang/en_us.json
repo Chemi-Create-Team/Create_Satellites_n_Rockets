@@ -18,7 +18,7 @@
   "console.create_satellites_n_rockets.title": "%s  %s/%s",
   "console.create_satellites_n_rockets.pos": "LAT %s  LON %s",
   "console.create_satellites_n_rockets.block": "X %s  Z %s",
-  "console.create_satellites_n_rockets.orbit": "ALT %s km  INC %s  %s min",
+  "console.create_satellites_n_rockets.orbit": "ALT %skm INC %s° %smin",
   "console.create_satellites_n_rockets.mode": "MODE %s",
   "console.create_satellites_n_rockets.mode.0": "STANDBY",
   "console.create_satellites_n_rockets.mode.1": "BEACON",
