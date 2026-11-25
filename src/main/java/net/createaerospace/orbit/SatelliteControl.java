@@ -32,6 +32,16 @@ public final class SatelliteControl {
         }
     }
 
+    /** Whether a button can do anything for this satellite: a dial at the end of its scale, or a selection with nothing else to select, cannot. */
+    public static boolean enabled(Satellite s, int count, Press press) {
+        return switch (press.button()) {
+            case PREVIOUS, NEXT -> count > 1;
+            case ALTITUDE -> press.up() ? s.tier() < OrbitMath.ALT_KM.length - 1 : s.tier() > 0;
+            case INCLINATION -> press.up() ? s.incl() < OrbitMath.INCLINATION_DEG.length - 1 : s.incl() > 0;
+            default -> true;
+        };
+    }
+
     public static int clamp(int v, int size) {
         return Math.max(0, Math.min(size - 1, v));
     }

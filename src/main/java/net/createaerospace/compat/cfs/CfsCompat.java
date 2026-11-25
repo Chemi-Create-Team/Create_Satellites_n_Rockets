@@ -15,11 +15,22 @@ public final class CfsCompat {
     public static void register() {
         if (!ModList.get().isLoaded(CFS)) return;
         try {
-            // older CFS builds (0.22.x) have no app API, though their version number sorts above 0.3.17
-            Class.forName("net.createfrontier.api.computer.ComputerApps", false, CfsCompat.class.getClassLoader());
+            // older CFS builds (0.22.x, and 0.3.17 to 0.3.25) have no canvas API, though 0.22.x sorts above 0.3.26
+            Class.forName("net.createfrontier.api.computer.ComputerCanvas", false, CfsCompat.class.getClassLoader());
             CfsComputerApp.register();
         } catch (ClassNotFoundException | LinkageError e) {
-            CreateAerospace.LOGGER.warn("Create: Frontier Science has no Control Computer app API, the satellite app is not added", e);
+            CreateAerospace.LOGGER.warn("Create: Frontier Science has no Control Computer canvas API, the satellite app is not added", e);
+        }
+    }
+
+    /** Client setup: the drawing of the app. Only called on the client. */
+    public static void registerClient() {
+        if (!ModList.get().isLoaded(CFS)) return;
+        try {
+            Class.forName("net.createfrontier.api.computer.client.ComputerCanvasRenderers", false, CfsCompat.class.getClassLoader());
+            net.createaerospace.client.CfsCanvasRenderer.register();
+        } catch (ClassNotFoundException | LinkageError e) {
+            CreateAerospace.LOGGER.warn("Create: Frontier Science has no Control Computer canvas renderer API, the satellite app is not drawn", e);
         }
     }
 }

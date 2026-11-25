@@ -50,8 +50,8 @@ configurations {
 }
 
 dependencies {
-    // Create: Frontier Science Control Computer app API, 0.3.23 (sha256 fb603e31...efef). CFS itself is an optional runtime mod.
-    compileOnly(files("libs/create-frontier-science-api-0.3.23.jar"))
+    // Create: Frontier Science Control Computer app API v2, 0.3.26 (sha256 771a16ab...b2cce). CFS itself is an optional runtime mod.
+    compileOnly(files("libs/create-frontier-science-api-0.3.26.jar"))
     createDistribution("maven.modrinth:create:${create_version_id}") { transitive = false }
     // Compile against the same Ponder, Flywheel and Registrate bundled with Create at runtime.
     compileOnly(files(provider {

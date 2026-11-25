@@ -1,6 +1,5 @@
 package net.createaerospace.compat.cfs;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,38 +7,38 @@ import java.util.UUID;
 import net.createaerospace.CreateAerospace;
 import net.createaerospace.block.ConsoleButton;
 import net.createaerospace.block.GroundConsoleBlockEntity;
-import net.createaerospace.orbit.OrbitMath;
+import net.createaerospace.compat.cfs.CfsLayout.View;
 import net.createaerospace.orbit.Satellite;
 import net.createaerospace.orbit.SatelliteControl;
 import net.createaerospace.orbit.SatelliteData;
 import net.createaerospace.orbit.SatelliteReadout;
 import net.createfrontier.api.computer.ComputerApps;
-import net.createfrontier.api.computer.ComputerApps.Application;
-import net.createfrontier.api.computer.ComputerApps.Button;
-import net.createfrontier.api.computer.ComputerApps.Context;
-import net.createfrontier.api.computer.ComputerApps.Panel;
-import net.createfrontier.api.computer.ComputerApps.Reading;
-import net.createfrontier.api.computer.ComputerApps.Tone;
+import net.createfrontier.api.computer.ComputerCanvas;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
 /**
- * The ground console as an app of the CFS Control Computer, under "Extra apps". It shows the satellite the computer has selected
- * and has the console's buttons, except the map (that is a client screen, the Control Computer cannot draw it).
+ * The ground console as a canvas app of the CFS Control Computer (API v2), under "Extra apps", with two views: the controls of the
+ * console and the Earth as a sphere of cubes. The server keeps which view and which satellite a computer shows and does what the buttons say; the
+ * drawing is {@code client.CfsCanvasRenderer}, from the same {@link CfsLayout}.
  * <p>
- * What it shows comes from {@link SatelliteReadout} and what the buttons do from {@link SatelliteControl}, the same code the
- * console block uses. When the console gains a line or a button, change it there and add it here.
+ * What the controls do comes from {@link SatelliteControl}, the same code the console block uses, and the readings from
+ * {@link SatelliteReadout}. When the console gains a button or a line, change it there and in the layout and the renderer.
  */
-final class CfsComputerApp implements Application {
-    private static final String K = "computer." + CreateAerospace.MOD_ID + ".";
+final class CfsComputerApp implements ComputerCanvas.Application {
+    static final String K = "computer." + CreateAerospace.MOD_ID + ".";
 
-    /** Selection and deorbit cover of each computer. ponytail: kept in memory, so a restart goes back to the first satellite. */
+    /** View, turn of the Earth, selection and deorbit cover of each computer. ponytail: kept in memory, so a restart goes back to the control view and the first satellite. */
     private record Key(ResourceKey<Level> dimension, BlockPos pos) {}
 
     private static final class Desk {
+        View view = View.CONTROL;
+        /** The Earth on the map, turned by this many steps of 45 degrees. */
+        int rot;
         UUID selected;
         long guardOpenedAt = Long.MIN_VALUE / 2;
     }
@@ -55,61 +54,40 @@ final class CfsComputerApp implements Application {
         return Component.translatable(K + "title");
     }
 
-    private Desk desk(Context c) {
+    private Desk desk(ComputerCanvas.Context c) {
         return desks.computeIfAbsent(new Key(c.level().dimension(), c.computerPos().immutable()), k -> new Desk());
     }
 
+    /** Only what changes when somebody presses something; the satellites and the time are the client's own. */
     @Override
-    public Panel snapshot(Context c) {
-        List<Satellite> all = SatelliteData.get(c.level().getServer()).list();
+    public ComputerCanvas.Frame canvas(ComputerCanvas.Context c) {
         Desk desk = desk(c);
-        Satellite s = SatelliteControl.pick(all, desk.selected);
-        if (s == null) return new Panel(Component.translatable(SatelliteReadout.K + "none"), Tone.WARNING,
-                List.of(new Reading(Component.translatable(K + "hint"), Component.translatable(SatelliteReadout.K + "none_hint"))), List.of());
-        long now = c.level().getGameTime();
-        var r = SatelliteReadout.of(s, all.indexOf(s), all.size(), now, c.computerPos());
-        boolean cover = now - desk.guardOpenedAt < GroundConsoleBlockEntity.GUARD_TICKS;
-        List<Button> buttons = new ArrayList<>();
-        for (String id : SatelliteControl.appButtons()) {
-            var press = SatelliteControl.parse(id);
-            boolean enabled = switch (press.button()) {
-                case PREVIOUS, NEXT -> all.size() > 1;
-                case ALTITUDE -> press.up() ? s.tier() < OrbitMath.ALT_KM.length - 1 : s.tier() > 0;
-                case INCLINATION -> press.up() ? s.incl() < OrbitMath.INCLINATION_DEG.length - 1 : s.incl() > 0;
-                default -> true;
-            };
-            boolean deorbit = press.button() == ConsoleButton.DEORBIT;
-            buttons.add(new Button(id, Component.translatable(K + "button." + id + (deorbit && cover ? "_confirm" : "")),
-                    deorbit ? Tone.DANGER : Tone.NORMAL, enabled));
+        CompoundTag data = new CompoundTag();
+        data.putInt("View", desk.view.ordinal());
+        data.putInt("Rot", desk.rot);
+        Satellite s = SatelliteControl.pick(SatelliteData.get(c.level().getServer()).list(), desk.selected);
+        if (s != null) data.putUUID("Sel", s.id());
+        data.putLong("CoverUntil", Math.max(0, desk.guardOpenedAt + GroundConsoleBlockEntity.GUARD_TICKS));
+        return new ComputerCanvas.Frame(ComputerCanvas.Presentation.WINDOWED, data);
+    }
+
+    @Override
+    public void click(ComputerCanvas.Context c, ServerPlayer player, ComputerCanvas.Frame displayed, double x, double y) {
+        // the buttons are found in the view the player was looking at
+        String hit = CfsLayout.hit(View.of(displayed.data().getInt("View")), x, y);
+        if (hit == null) return;
+        Desk desk = desk(c);
+        switch (hit) {
+            case CfsLayout.TAB_CONTROL -> desk.view = View.CONTROL;
+            case CfsLayout.TAB_MAP -> desk.view = View.MAP;
+            case CfsLayout.ROTATE_LEFT -> desk.rot = Math.floorMod(desk.rot + 1, 8);
+            case CfsLayout.ROTATE_RIGHT -> desk.rot = Math.floorMod(desk.rot - 1, 8);
+            default -> press(c, player, desk, SatelliteControl.parse(hit));
         }
-        // values in the amber and green of the console screen; the label and the frame stay in CFS colors
-        return new Panel(Component.literal(r.name()), r.mode() == Satellite.STANDBY ? Tone.NORMAL : Tone.GOOD, List.of(
-                reading("selected", led(r.number() + " / " + r.count())),
-                reading("owner", led(r.owner())),
-                reading("position", led(r.lat() + "  " + r.lon())),
-                reading("block", led("X " + r.blockX() + "  Z " + r.blockZ())),
-                reading("altitude", led(r.altKm() + " km")),
-                reading("inclination", led(r.inclDeg() + "°")),
-                reading("period", led(r.periodMin() + " min")),
-                reading("mode", r.modeName().withColor(SatelliteReadout.modeColor(r.mode()))),
-                reading("visibility", r.visibility().withColor(r.above() ? GREEN : DIM))), buttons);
     }
 
-    private static final int AMBER = 0xFFB020, GREEN = 0x55FF77, DIM = 0x7F93AA;
-
-    private static Component led(String text) {
-        return Component.literal(text).withColor(AMBER);
-    }
-
-    private static Reading reading(String key, Component value) {
-        return new Reading(Component.translatable(K + "reading." + key), value);
-    }
-
-    @Override
-    public void press(Context c, ServerPlayer player, String id) {
-        var press = SatelliteControl.parse(id);
+    private void press(ComputerCanvas.Context c, ServerPlayer player, Desk desk, SatelliteControl.Press press) {
         List<Satellite> all = SatelliteData.get(c.level().getServer()).list();
-        Desk desk = desk(c);
         Satellite s = SatelliteControl.pick(all, desk.selected);
         if (press == null || s == null) return;
         int i = all.indexOf(s);

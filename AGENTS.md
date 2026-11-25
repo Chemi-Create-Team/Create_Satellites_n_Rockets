@@ -42,11 +42,12 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 - 地上管制コンソールはRnRの原子炉制御盤と同じ作り。ボタンは天面にあり、クリック位置を操作者の座標系（`GroundConsoleBlock.uv`）で当てる。座標は `ConsoleButton`、向きは `FACING`（操作者の側を向く）、ダイヤルは左半分で下げ右半分で上げる。見た目の動く部分は `GroundConsoleRenderer`、状態はブロックエンティティの更新タグで同期する。
 - 衛星の変更は所有者かOP（`Satellite.controlledBy`）だけ。閲覧は誰でもできる。軌道離脱はカバー（`GUARD_TICKS`）を開けた後の2回目のクリック。
 - 衛星の一覧は `SatellitesPayload` でログイン時と変更時に全プレイヤーへ送る。名前の長さは `Satellite.MAX_NAME` で切る（パケット上限を超えるとプレイヤーが切断されるため）。
-- 衛星マップ画面（`SatelliteMapScreen`）は管制室風の3列（左に衛星一覧、中央に世界地図と地上軌跡、右に選択中の読み取り）。陸地は `textures/gui/world_map.png`（Natural Earth 1:110m、パブリックドメイン、512×256の正距円筒）。右の読み取りは `SatelliteReadout` を使い、コンソール・CFSアプリと同じ値にする。琥珀・緑・青の配色は画面とCFSアプリでそろえ、モードの色は `SatelliteReadout.MODE_COLORS` に置く。
+- 衛星マップ画面（`SatelliteMapScreen`）は管制室風の3列（左に衛星一覧、中央に立体の地球、右に選択中の読み取り）。**地球は立方体でできた球（`client/globe/VoxelGlobe`、半径28個、陸地は海より1個高く、極は白）で、衛星は小さなボクセルの機体として軌道半径（縮尺は無視。静止軌道で1.75倍）の位置に描く**。世界は平面の経度緯度の地図だが、それを世界地図として描かない（ユーザー指定）。`VoxelGlobe` はMinecraftの型を使わず、四角形を `Sink` へ渡すだけにして、画面（`GuiGraphics`）とCFSのキャンバスと単体の確認プログラムで共用する。陸地は `textures/gui/land_mask.png`（Natural Earth 1:50m、パブリックドメイン、512×256の白黒）から起動後に1回だけ作る。画面はドラッグで地球を回す。右の読み取りは `SatelliteReadout` を使い、コンソール・CFSアプリと同じ値にする。琥珀・緑・青の配色は画面とCFSアプリでそろえ、モードの色は `SatelliteReadout.MODE_COLORS` に置く。
 - 夜空は `RenderLevelStageEvent` の `AFTER_SKY` で素のテッセレータを使う（`client/NightSky`）。シェーダーパックが空を置き換える場合の非対応は既知の制限。
 - Mixinを使わず、Createの公開APIを使う。単純化で上限を作る箇所には `ponytail:` コメントで上限と拡張方法を書く。
-- 地上管制コンソールは、CFS（Create: Frontier Science）0.3.17以降があるときだけ、共通制御コンピュータの「追加アプリ」としても使える（`compat/cfs`）。**任意の連携で、必須依存にしない。** `net.createfrontier.*` を参照してよいのは `CfsComputerApp` だけで、`CfsCompat` が `ModList` と `ComputerApps` クラスの有無を確かめてから呼ぶ。`libs/` のAPI JAR（`compileOnly`）は、CFSの `dist/` の公式のものをそのまま使い、版を上げるときはハッシュを `build.gradle` のコメントに書く。CFS本体は変更しない。
-- **コンソールの機能を変えたら、コンピュータのアプリも同じ変更で直す。** 表示は `SatelliteReadout`（コンソールの画面とアプリの共通）、操作は `SatelliteControl`（コンソールのブロックとアプリの共通）に書く。コンソールにボタンや表示項目を足したときは、`SatelliteControl.appButtons()` の対象か、アプリに出せない理由（マップのようなクライアント画面）を決め、`CfsComputerApp` の読み取り・ボタンと `computer.*` の翻訳（3言語）、両方のREADMEを更新する。アプリのパネルは読み取り12項目・ボタン12個まで。
+- 地上管制コンソールは、CFS（Create: Frontier Science）0.3.26以降があるときだけ、共通制御コンピュータの「追加アプリ」（キャンバスAPI v2）としても使える（`compat/cfs`、描画は `client/CfsCanvasRenderer`）。**任意の連携で、必須依存にしない。** `net.createfrontier.*` を参照してよいのは `CfsComputerApp`（サーバー）と `CfsCanvasRenderer`（クライアント）だけで、`CfsCompat` が `ModList` と `ComputerCanvas`・`ComputerCanvasRenderers` クラスの有無を確かめてから呼ぶ。`libs/` のAPI JAR（`compileOnly`）はCFSの `dist/` の公式のものをそのまま使い、版を上げるときはハッシュを `build.gradle` のコメントに書く。CFS本体は変更しない。
+- コンピュータのアプリは「制御」と「マップ」（立体の地球）の2画面。マップには地球を45度ずつ回すボタンがあり、向きは `Rot` としてフレームに入れる。ボタンとタブの位置は `CfsLayout`（正規化座標）だけに書き、描画（クライアント）とクリックの判定（サーバー）が同じものを使う。フレームに入れるのは表示画面・選択衛星・離脱カバーの期限だけで、衛星と時刻はクライアントが自分の写し（`ClientSatellites`、`gameTime`）から描く（時刻で変わる値をフレームに入れると毎回同期される）。
+- **コンソールの機能を変えたら、コンピュータのアプリも同じ変更で直す。** 表示は `SatelliteReadout`（コンソールの画面・マップ画面・アプリの共通）、操作は `SatelliteControl`（コンソールのブロックとアプリの共通）に書く。コンソールにボタンや表示項目を足したときは、`SatelliteControl.appButtons()` の対象か、アプリに出せない理由を決め、`CfsLayout`・`CfsCanvasRenderer`・`computer.*` の翻訳（3言語）・両方のREADMEを更新する（レイアウトの整合は `OrbitGameTests` が検査する）。
 
 ## 文書と検証
 

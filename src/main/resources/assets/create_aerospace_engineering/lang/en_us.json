@@ -28,7 +28,7 @@
   "console.create_aerospace_engineering.owner": "OWNER %s",
   "screen.create_aerospace_engineering.map": "Satellite Map",
   "screen.create_aerospace_engineering.selected": "%s  %s %s  (block X %s, Z %s)  %s km",
-  "screen.create_aerospace_engineering.legend": "Green cross: this console. Yellow: selected satellite. 1 degree = 1000 blocks.",
+  "screen.create_aerospace_engineering.legend": "Green: this console. Yellow: selected satellite. Drag to turn the Earth. 1 degree = 1000 blocks.",
   "screen.create_aerospace_engineering.count": "SAT %s",
   "screen.create_aerospace_engineering.clock": "DAY %s  %s",
   "screen.create_aerospace_engineering.panel.list": "SATELLITES",
@@ -36,6 +36,8 @@
   "command.create_aerospace_engineering.none": "There are no satellites.",
   "command.create_aerospace_engineering.removed": "Removed %s satellites.",
   "computer.create_aerospace_engineering.title": "Satellites",
+  "computer.create_aerospace_engineering.tab.control": "Controls",
+  "computer.create_aerospace_engineering.tab.map": "Map",
   "computer.create_aerospace_engineering.hint": "Launch from a pad",
   "computer.create_aerospace_engineering.reading.selected": "Satellite",
   "computer.create_aerospace_engineering.reading.owner": "Owner",
@@ -54,5 +56,7 @@
   "computer.create_aerospace_engineering.button.inclination_down": "Inclination -",
   "computer.create_aerospace_engineering.button.inclination_up": "Inclination +",
   "computer.create_aerospace_engineering.button.deorbit": "Deorbit",
-  "computer.create_aerospace_engineering.button.deorbit_confirm": "Confirm deorbit"
+  "computer.create_aerospace_engineering.button.deorbit_confirm": "Confirm deorbit",
+  "computer.create_aerospace_engineering.button.rotate_left": "Turn left",
+  "computer.create_aerospace_engineering.button.rotate_right": "Turn right"
 }

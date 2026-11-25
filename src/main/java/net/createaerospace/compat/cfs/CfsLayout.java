@@ -1,0 +1,69 @@
+package net.createaerospace.compat.cfs;
+
+import java.util.ArrayList;
+import java.util.List;
+import net.createaerospace.orbit.SatelliteControl;
+
+/**
+ * Where everything is on the Control Computer app, in fractions of the canvas (x right, y down). The renderer draws from it and the
+ * server finds the clicked button from it, so the two cannot disagree. No CFS types here.
+ */
+public final class CfsLayout {
+    public enum View {
+        CONTROL, MAP;
+
+        public static View of(int i) {
+            return i == MAP.ordinal() ? MAP : CONTROL;
+        }
+    }
+
+    public record Rect(float l, float t, float r, float b) {
+        public boolean contains(double x, double y) {
+            return x >= l && x < r && y >= t && y < b;
+        }
+
+        public boolean overlaps(Rect o) {
+            return l < o.r && o.l < r && t < o.b && o.t < b;
+        }
+    }
+
+    public static final String TAB_CONTROL = "tab_control", TAB_MAP = "tab_map";
+    public static final Rect TAB_CONTROL_RECT = new Rect(.03f, .03f, .20f, .11f), TAB_MAP_RECT = new Rect(.21f, .03f, .38f, .11f);
+    /** The status line over the readings, the readings (three columns), and the map. */
+    public static final Rect STATUS = new Rect(.03f, .14f, .97f, .22f), READINGS = new Rect(.03f, .24f, .97f, .62f), MAP = new Rect(.03f, .14f, .97f, .80f);
+    /** The line over the buttons of the map view. */
+    public static final Rect MAP_SUMMARY = new Rect(.03f, .81f, .97f, .87f);
+
+    private CfsLayout() {}
+
+    /** Turning the Earth on the map view, a step of 45 degrees. */
+    public static final String ROTATE_LEFT = "rotate_left", ROTATE_RIGHT = "rotate_right";
+
+    /** The buttons shown in a view: all of the console in the control view, the selection and the turning of the Earth under the map. */
+    public static List<String> buttons(View v) {
+        return v == View.CONTROL ? SatelliteControl.appButtons() : List.of("previous", "next", ROTATE_LEFT, ROTATE_RIGHT);
+    }
+
+    public static Rect button(View v, String id) {
+        int i = buttons(v).indexOf(id);
+        if (i < 0) return null;
+        if (v == View.MAP) return new Rect(.03f + i * .18f, .88f, .20f + i * .18f, .96f);
+        float left = .03f + (i % 4) * .2375f, top = .66f + (i / 4) * .155f;
+        return new Rect(left, top, left + .2225f, top + .135f);
+    }
+
+    /** The tab or button at a point, or null. */
+    public static String hit(View v, double x, double y) {
+        if (TAB_CONTROL_RECT.contains(x, y)) return TAB_CONTROL;
+        if (TAB_MAP_RECT.contains(x, y)) return TAB_MAP;
+        for (String id : buttons(v)) if (button(v, id).contains(x, y)) return id;
+        return null;
+    }
+
+    /** Every clickable rectangle of a view, tabs first. */
+    public static List<Rect> all(View v) {
+        List<Rect> rects = new ArrayList<>(List.of(TAB_CONTROL_RECT, TAB_MAP_RECT));
+        for (String id : buttons(v)) rects.add(button(v, id));
+        return rects;
+    }
+}

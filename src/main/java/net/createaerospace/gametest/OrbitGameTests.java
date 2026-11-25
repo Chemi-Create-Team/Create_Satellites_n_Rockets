@@ -203,4 +203,41 @@ public class OrbitGameTests {
         net.createaerospace.compat.cfs.CfsCompat.register(); // without Create: Frontier Science it must do nothing
         h.succeed();
     }
+
+    @GameTest(template = "test_empty")
+    public static void theControlComputerLayoutHasEveryButtonOnceAndInsideTheCanvas(GameTestHelper h) {
+        for (var v : net.createaerospace.compat.cfs.CfsLayout.View.values()) {
+            var rects = net.createaerospace.compat.cfs.CfsLayout.all(v);
+            for (int i = 0; i < rects.size(); i++) {
+                var r = rects.get(i);
+                h.assertTrue(r.l() >= 0 && r.t() >= 0 && r.r() <= 1 && r.b() <= 1, v + " rectangle " + i + " is inside the canvas");
+                for (int j = i + 1; j < rects.size(); j++) h.assertTrue(!r.overlaps(rects.get(j)), v + " rectangles " + i + " and " + j + " do not overlap");
+            }
+            for (String id : net.createaerospace.compat.cfs.CfsLayout.buttons(v)) {
+                var r = net.createaerospace.compat.cfs.CfsLayout.button(v, id);
+                h.assertTrue(id.equals(net.createaerospace.compat.cfs.CfsLayout.hit(v, (r.l() + r.r()) / 2, (r.t() + r.b()) / 2)), v + " finds " + id);
+            }
+        }
+        h.assertTrue(net.createaerospace.compat.cfs.CfsLayout.buttons(net.createaerospace.compat.cfs.CfsLayout.View.CONTROL)
+                .equals(net.createaerospace.orbit.SatelliteControl.appButtons()), "the control view has every console button");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty")
+    public static void theVoxelEarthShowsOnlyTheSideTowardsTheViewer(GameTestHelper h) {
+        var sea = new net.createaerospace.client.globe.VoxelGlobe((lat, lon) -> false);
+        var land = new net.createaerospace.client.globe.VoxelGlobe((lat, lon) -> true);
+        int[] seaQuads = {0}, landQuads = {0};
+        var view = new net.createaerospace.client.globe.VoxelGlobe.View(10, 20, 0, 0, 1);
+        sea.drawEarth((a, b, c, d, e, f, g, i, j, k, l, m, argb) -> seaQuads[0]++, view);
+        land.drawEarth((a, b, c, d, e, f, g, i, j, k, l, m, argb) -> landQuads[0]++, view);
+        int n = net.createaerospace.client.globe.VoxelGlobe.N;
+        h.assertTrue(seaQuads[0] > n * n && seaQuads[0] < 12 * n * n, "a sphere of cubes shows a few thousand faces, got " + seaQuads[0]);
+        h.assertTrue(landQuads[0] > seaQuads[0] / 2, "land is a sphere of cubes too, got " + landQuads[0]);
+        // the point in the middle of the view is on the near side; its opposite is behind the Earth
+        var near = net.createaerospace.client.globe.VoxelGlobe.position(Math.toRadians(10), Math.toRadians(20), n * 1.5);
+        var far = net.createaerospace.client.globe.VoxelGlobe.position(Math.toRadians(-10), Math.toRadians(200), n * 1.5);
+        h.assertTrue(!view.hidden(near) && view.hidden(far), "a satellite behind the Earth is hidden");
+        h.succeed();
+    }
 }

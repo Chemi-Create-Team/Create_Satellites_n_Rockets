@@ -31,7 +31,7 @@ the one you want.
   keeps the satellite where it is and sets it on the new orbit.
 - **Deorbit** is under a cover. The first click lifts the cover, a second click within ten seconds removes the satellite.
 - The screen shows the selected satellite's latitude and longitude, **the block coordinates under it**, orbit, mode and
-  whether it is above your horizon. The **map** opens a mission control screen: a world map with the ground track of every satellite (the selected one in yellow), the list of satellites on the left and the readout of the selected one on the right.
+  whether it is above your horizon. The **map** opens a mission control screen: the Earth as a sphere of cubes with every satellite over it as a small voxel model and the orbit of the selected one (yellow) drawn in 3D (drag to turn the Earth), the list of satellites on the left and the readout of the selected one on the right.
 
 Only the owner of a satellite (or an operator) can change it. Anyone can read it. A **Display Link** pointed at the console
 shows the selected satellite's position on any display.
@@ -50,16 +50,17 @@ is dim. You see them from the spot where you stand. A geostationary satellite st
 
 ## Control Computer (Create: Frontier Science)
 
-If [Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science) 0.3.17 or newer is installed, the ground
+If [Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science) 0.3.26 or newer is installed, the ground
 console is also an app of its Control Computer: open **Extra apps** on a display board and pick **Satellites**. It is optional;
 without Frontier Science nothing changes.
 
-- It shows the satellite the computer has selected: name, owner, latitude and longitude, the block coordinates under it, altitude,
-  inclination, period, mode, and whether it is above the horizon of the computer.
-- It has the console's buttons: **previous**, **next**, **mode**, altitude and inclination (**-** and **+**), and **deorbit**
-  (the first press asks for confirmation, the second within ten seconds deorbits).
-- It does not need a Ground Control Console block. Each computer keeps its own selection (forgotten on a restart). Only the owner of a
-  satellite (or an operator) can change it, as on the console. The map is not available there.
+- **Controls** tab: the satellite the computer has selected (name, owner, latitude and longitude, the block coordinates under it,
+  altitude, inclination, period, mode, and whether it is above the horizon of the board) and the console's buttons: **previous**,
+  **next**, **mode**, altitude and inclination (**-** and **+**), and **deorbit** (the first press asks for confirmation, the second
+  within ten seconds deorbits).
+- **Map** tab: the same cube Earth with the satellites over it, seen from over the board; **previous** / **next** and **turn left** / **turn right** (45 degrees a step).
+- It does not need a Ground Control Console block. Each computer keeps its own view and selection (forgotten on a restart). Only the owner of a
+  satellite (or an operator) can change it, as on the console.
 
 ## Commands (operators)
 
@@ -71,4 +72,4 @@ without Frontier Science nothing changes.
 
 ## Credits
 
-The land on the map screen is drawn from [Natural Earth](https://www.naturalearthdata.com/) 1:110m land, public domain.
+The land of the cube Earth is taken from [Natural Earth](https://www.naturalearthdata.com/) 1:50m land and lakes, public domain.
