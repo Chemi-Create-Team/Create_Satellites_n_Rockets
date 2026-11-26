@@ -20,8 +20,19 @@ public final class ClientSetup {
             e.registerBlockEntityRenderer(CreateAerospace.GROUND_CONSOLE_BE.get(), GroundConsoleRenderer::new);
         });
         bus.addListener(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent.class, e -> e.enqueueWork(net.createaerospace.compat.cfs.CfsCompat::registerClient));
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent.class, ClientSetup::tooltip);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, e -> {
             if (e.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) NightSky.render(e);
         });
+    }
+
+    /** Mass on every payload and the numbers on every rocket, CAE's and those of other mods alike. */
+    private static void tooltip(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent e) {
+        var gray = net.minecraft.ChatFormatting.GRAY;
+        int kg = net.createaerospace.api.AerospaceApi.massKg(e.getItemStack());
+        if (kg > 0) e.getToolTip().add(net.minecraft.network.chat.Component.translatable("tooltip.create_aerospace_engineering.mass", kg).withStyle(gray));
+        var rocket = net.createaerospace.api.RocketApi.rocket(net.createaerospace.api.RocketApi.rocketOf(e.getItemStack()));
+        if (rocket != null) e.getToolTip().add(net.minecraft.network.chat.Component.translatable("tooltip.create_aerospace_engineering.rocket",
+                rocket.type().maxPayloadKg(), rocket.type().fuelMb()).withStyle(gray));
     }
 }

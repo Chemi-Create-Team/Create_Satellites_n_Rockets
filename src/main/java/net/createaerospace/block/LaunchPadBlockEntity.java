@@ -12,7 +12,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 public class LaunchPadBlockEntity extends BlockEntity {
-    public static final int CAPACITY = 8000, FUEL_PER_LAUNCH = 4000;
+    public static final int CAPACITY = net.createaerospace.api.RocketApi.MAX_FUEL_MB;
 
     public final FluidTank tank = new FluidTank(CAPACITY, fs -> fs.getFluid().is(CreateAerospace.ROCKET_FUEL)) {
         @Override
@@ -27,10 +27,12 @@ public class LaunchPadBlockEntity extends BlockEntity {
 
     /** Burns the fuel and fires the loaded rocket. Returns false, changing nothing, if there is no rocket or too little fuel. */
     public boolean tryLaunch() {
-        var rockets = level.getEntitiesOfClass(RocketEntity.class, LaunchPadBlock.rocketSpace(worldPosition), r -> !r.isAscending());
-        if (rockets.isEmpty() || tank.getFluidAmount() < FUEL_PER_LAUNCH) return false;
-        tank.drain(FUEL_PER_LAUNCH, IFluidHandler.FluidAction.EXECUTE);
-        rockets.get(0).launch();
+        RocketEntity r = LaunchPadBlock.standing(level, worldPosition);
+        if (r == null || r.payloadCount() == 0) return false;
+        int fuel = r.type().type().fuelMb();
+        if (tank.getFluidAmount() < fuel) return false;
+        if (fuel > 0) tank.drain(fuel, IFluidHandler.FluidAction.EXECUTE);
+        r.launch();
         return true;
     }
 

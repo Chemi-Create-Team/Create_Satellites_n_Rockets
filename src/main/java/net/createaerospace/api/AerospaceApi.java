@@ -29,7 +29,9 @@ import net.minecraft.world.item.ItemStack;
  * {@code ModList.get().isLoaded("create_aerospace_engineering")}. See {@code docs/api.md}.
  */
 public final class AerospaceApi {
-    public static final int API_VERSION = 1;
+    public static final int API_VERSION = 2;
+    /** The mass of CAE's own satellite, and of a payload that does not say. */
+    public static final int DEFAULT_MASS_KG = 500;
     /** The largest payload data kept on one satellite, in bytes of NBT. */
     public static final int MAX_DATA_BYTES = 16_384;
     /** The payload type of a plain CAE satellite. */
@@ -44,6 +46,11 @@ public final class AerospaceApi {
     public interface Payload {
         /** Shown on the ground console and the map, e.g. "GPS". Translated on each client, so use a translatable component. */
         Component name();
+
+        /** What one item of this payload weighs. A rocket takes payloads up to its {@code RocketApi.RocketType.maxPayloadKg}. API 2. */
+        default int massKg(ItemStack stack) {
+            return DEFAULT_MASS_KG;
+        }
 
         /**
          * The rocket has reached orbit; returns the first data of the new satellite. {@code stack} is a copy of the item that was
@@ -72,7 +79,7 @@ public final class AerospaceApi {
         Objects.requireNonNull(item);
         Objects.requireNonNull(payload);
         if (id.equals(STANDARD) || id.toString().length() > 128 || PAYLOADS.containsKey(id) || ITEMS.containsKey(item)
-                || item == CreateAerospace.SATELLITE.get()) {
+                || item == CreateAerospace.SATELLITE.get() || RocketApi.rocketOf(new ItemStack(item)) != null) {
             throw new IllegalArgumentException("Invalid or duplicate CAE payload: " + id + " / " + BuiltInRegistries.ITEM.getKey(item));
         }
         PAYLOADS.put(id, payload);
@@ -83,6 +90,19 @@ public final class AerospaceApi {
     public static synchronized ResourceLocation payloadOf(ItemStack stack) {
         if (stack.is(CreateAerospace.SATELLITE.get())) return STANDARD;
         return ITEMS.get(stack.getItem());
+    }
+
+    /** What one item weighs as a payload, at least 1 kg; 0 when it is not a payload. */
+    public static int massKg(ItemStack stack) {
+        ResourceLocation id = payloadOf(stack);
+        if (id == null) return 0;
+        Payload p = payload(id);
+        try {
+            return Math.max(1, p == null ? DEFAULT_MASS_KG : p.massKg(stack.copyWithCount(1)));
+        } catch (RuntimeException e) {
+            CreateAerospace.LOGGER.error("Payload {} failed to give its mass", id, e);
+            return DEFAULT_MASS_KG;
+        }
     }
 
     public static synchronized Payload payload(ResourceLocation id) {

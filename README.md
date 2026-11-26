@@ -10,12 +10,15 @@ Everything happens in the normal world. There is no trip to space.
 
 ## Launching
 
-1. **Launch Pad**: fill it with fuel, 8000 mB at most, by bucket or pipe. A launch burns 4000 mB. Lava always works; naphtha,
+1. **Launch Pad**: fill it with fuel, 8000 mB at most, by bucket or pipe. A launch burns what the rocket needs (4000 mB for CAE's rocket). Lava always works; naphtha,
    methanol, low-sulfur diesel and hydrogen work with Refinery 'n' Reactors (tag `create_aerospace_engineering:rocket_fuel`).
-2. Use a **Satellite** on the pad: a rocket (an ordinary entity with a 3D model) stands up on it. Rename the satellite on an
-   anvil to name it. Right-click the pad with an empty hand to read fuel and loading.
-3. Give the pad a **redstone signal** (a new one: a pad that is already powered does not fire when you fill it later). The rocket climbs for a few seconds, releases the satellite and is gone. If the pad is
-   broken before launch, the satellite drops as an item.
+2. Use a **Rocket** on the pad: it stands up on it (an ordinary entity with a 3D model).
+3. Use **Satellites** on the rocket to load them. Every payload has a **mass** and every rocket a **maximum payload**: CAE's rocket
+   lifts 1000 kg and a satellite weighs 500 kg, so it carries two (the tooltips show both numbers). Rename a satellite on an anvil
+   to name it. Right-click the pad with an empty hand to read fuel and loading; sneak-right-click with an empty hand to take the
+   rocket and its payloads back.
+4. Give the pad a **redstone signal** (a new one: a pad that is already powered does not fire when you fill it later). The rocket climbs for a few seconds, releases every payload as its own satellite and is gone. If the pad is
+   broken before launch, the rocket and the satellites drop as items.
 
 The satellite is released into **geostationary orbit** over the equator at the launch longitude, like a communications
 satellite: it hangs over one spot of the world and never moves. Step it down with the altitude dial and tilt it with the
@@ -62,11 +65,14 @@ without Frontier Science nothing changes.
 - It does not need a Ground Control Console block. Each computer keeps its own view and selection (forgotten on a restart). Only the owner of a
   satellite (or an operator) can change it, as on the console.
 
-## Satellites of other mods (API)
+## Satellites and rockets of other mods (API)
 
 Other mods can register their own item as a satellite payload. Used on a Launch Pad, it rides a CAE rocket to orbit and becomes a
 satellite of that mod, which reads its position and keeps its own data on it (for a GPS, a relay for a channel network, ...). Both sides
-stay optional. The ground console shows the payload as **PAYLOAD**. See [docs/api.md](docs/api.md) (Japanese) and
+stay optional. The ground console shows the payload as **PAYLOAD**. A payload sets its own mass.
+
+Other mods can also add **rockets**: their own item stands a rocket of their own on the pad, with its own maximum payload, fuel,
+climb, speed and size, drawn however they like (any model, texture, animation and exhaust). See [docs/api.md](docs/api.md) (Japanese) and
 `dist/create-aerospace-engineering-api-*.jar`.
 
 ## Commands (operators)

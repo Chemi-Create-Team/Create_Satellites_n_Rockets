@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " N ",
+    "STS",
+    "SFS"
+  ],
+  "key": {
+    "N": {
+      "item": "create:copper_sheet"
+    },
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "T": {
+      "item": "create:fluid_tank"
+    },
+    "F": {
+      "item": "create:propeller"
+    }
+  },
+  "result": {
+    "id": "create_aerospace_engineering:rocket",
+    "count": 1
+  }
+}

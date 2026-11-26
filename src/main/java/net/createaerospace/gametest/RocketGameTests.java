@@ -33,12 +33,20 @@ public class RocketGameTests {
     private static final BlockPos PAD = new BlockPos(1, 12, 1);
     private static final BlockPos CONSOLE = new BlockPos(1, 2, 1);
 
-    private static void loadRocket(GameTestHelper h, Player player) {
-        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
-        ItemStack stack = new ItemStack(CreateAerospace.SATELLITE.get());
+    /** Use {@code stack} on the pad as {@code player}. */
+    private static void use(GameTestHelper h, Player player, ItemStack stack) {
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
         BlockPos abs = h.absolutePos(PAD);
         h.getLevel().getBlockState(abs).useItemOn(stack, h.getLevel(), player, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
+    }
+
+    private static void loadRocket(GameTestHelper h, Player player) {
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
+        ItemStack rocket = new ItemStack(CreateAerospace.ROCKET_ITEM.get());
+        use(h, player, rocket);
+        h.assertTrue(rocket.isEmpty() && rockets(h).size() == 1, "the rocket item stands a rocket up");
+        ItemStack stack = new ItemStack(CreateAerospace.SATELLITE.get());
+        use(h, player, stack);
         h.assertTrue(stack.isEmpty(), "the satellite is used up when it is loaded");
     }
 
@@ -90,10 +98,9 @@ public class RocketGameTests {
     public static void aPadHoldsOnlyOneRocketAndOnlyTakesFuel(GameTestHelper h) {
         Player p = h.makeMockPlayer(GameType.SURVIVAL);
         loadRocket(h, p);
-        ItemStack second = new ItemStack(CreateAerospace.SATELLITE.get());
-        BlockPos abs = h.absolutePos(PAD);
-        h.getLevel().getBlockState(abs).useItemOn(second, h.getLevel(), p, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
-        h.assertTrue(rockets(h).size() == 1 && !second.isEmpty(), "a second satellite is not loaded onto an occupied pad");
+        ItemStack second = new ItemStack(CreateAerospace.ROCKET_ITEM.get());
+        use(h, p, second);
+        h.assertTrue(rockets(h).size() == 1 && !second.isEmpty(), "a second rocket is not stood on an occupied pad");
         var tank = ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank;
         h.assertTrue(tank.fill(new FluidStack(Fluids.WATER, 1000), IFluidHandler.FluidAction.EXECUTE) == 0, "water is refused");
         h.succeed();
@@ -108,7 +115,33 @@ public class RocketGameTests {
             h.assertTrue(rockets(h).isEmpty(), "the rocket is removed");
             h.assertTrue(!h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(h.absolutePos(PAD)).inflate(4, 4, 4),
                     i -> i.getItem().is(CreateAerospace.SATELLITE.get())).isEmpty(), "and the satellite drops");
+            h.assertTrue(!h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(h.absolutePos(PAD)).inflate(4, 4, 4),
+                    i -> i.getItem().is(CreateAerospace.ROCKET_ITEM.get())).isEmpty(), "and the rocket item too");
         });
+    }
+
+    @GameTest(template = "test_empty", batch = "rocket_mass", timeoutTicks = 100)
+    public static void aRocketTakesPayloadsUpToItsMassLimitAndCanBeTakenDown(GameTestHelper h) {
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
+        ItemStack sats = new ItemStack(CreateAerospace.SATELLITE.get(), 3);
+        use(h, p, sats);
+        h.assertTrue(sats.getCount() == 3 && rockets(h).isEmpty(), "a payload needs a rocket on the pad");
+        use(h, p, new ItemStack(CreateAerospace.ROCKET_ITEM.get()));
+        h.assertTrue(net.createaerospace.api.AerospaceApi.massKg(sats) == 500, "CAE's satellite weighs 500 kg");
+        use(h, p, sats);
+        use(h, p, sats);
+        use(h, p, sats);
+        RocketEntity r = rockets(h).get(0);
+        h.assertTrue(sats.getCount() == 1 && r.payloadCount() == 2 && r.loadedKg() == 1000, "two fit under 1000 kg, the third does not");
+        p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        p.setShiftKeyDown(true);
+        BlockPos abs = h.absolutePos(PAD);
+        h.getLevel().getBlockState(abs).useWithoutItem(h.getLevel(), p, new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
+        h.assertTrue(rockets(h).isEmpty(), "sneaking with an empty hand takes the rocket down");
+        h.assertTrue(p.getInventory().countItem(CreateAerospace.SATELLITE.get()) == 2 && p.getInventory().countItem(CreateAerospace.ROCKET_ITEM.get()) == 1,
+                "and gives back the rocket and its payloads");
+        h.succeed();
     }
 
     @GameTest(template = "test_empty")
@@ -201,6 +234,11 @@ public class RocketGameTests {
             }
 
             @Override
+            public int massKg(ItemStack stack) {
+                return 300;
+            }
+
+            @Override
             public net.minecraft.nbt.CompoundTag deploy(net.minecraft.server.level.ServerLevel level, ItemStack stack,
                                                        net.createaerospace.api.AerospaceApi.SatelliteInfo satellite) {
                 var t = new net.minecraft.nbt.CompoundTag();
@@ -215,21 +253,53 @@ public class RocketGameTests {
         });
     }
 
+    private static final net.minecraft.resources.ResourceLocation TEST_ROCKET = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("cae_test", "sounding_rocket");
+    private static final java.util.List<String> HOOKS = new java.util.ArrayList<>();
+
+    /** A spyglass stands in for the rocket item of another mod: small, wide, light and cheap. */
+    private static synchronized void registerTestRocket() {
+        if (net.createaerospace.api.RocketApi.rocket(TEST_ROCKET) != null) return;
+        net.createaerospace.api.RocketApi.registerRocket(TEST_ROCKET, net.minecraft.world.item.Items.SPYGLASS,
+                new net.createaerospace.api.RocketApi.RocketType(net.minecraft.network.chat.Component.literal("Sounder"), 300, 1000, 32, 0.1, 1.5, 2f, 3f),
+                new net.createaerospace.api.RocketApi.Hooks() {
+                    @Override
+                    public void launched(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.Entity rocket, java.util.List<ItemStack> payloads) {
+                        HOOKS.add("launched:" + payloads.size());
+                    }
+
+                    @Override
+                    public void deployed(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.Entity rocket,
+                                         java.util.List<net.createaerospace.api.AerospaceApi.SatelliteInfo> satellites) {
+                        HOOKS.add("deployed:" + satellites.get(0).name());
+                    }
+                });
+    }
+
     @GameTest(template = "test_empty", batch = "rocket_payload", timeoutTicks = 400)
     public static void aRocketCarriesThePayloadOfAnotherModToOrbit(GameTestHelper h) {
         registerTestPayload();
+        registerTestRocket();
+        HOOKS.clear();
         Player p = h.makeMockPlayer(GameType.SURVIVAL);
         h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
-        ItemStack stack = new ItemStack(net.minecraft.world.item.Items.COMPASS);
+        use(h, p, new ItemStack(net.minecraft.world.item.Items.SPYGLASS));
+        h.assertTrue(rockets(h).size() == 1 && rockets(h).get(0).typeId().equals(TEST_ROCKET), "the item of another mod stands its own rocket up");
+        h.assertTrue(rockets(h).get(0).getBbWidth() == 2f && rockets(h).get(0).getBbHeight() == 3f, "with its own size");
+        use(h, p, new ItemStack(CreateAerospace.SATELLITE.get()));
+        h.assertTrue(rockets(h).get(0).payloadCount() == 0, "a 500 kg satellite is too heavy for a 300 kg rocket");
+        ItemStack stack = new ItemStack(net.minecraft.world.item.Items.COMPASS, 2);
         stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Nav-1"));
-        p.setItemInHand(InteractionHand.MAIN_HAND, stack);
+        use(h, p, stack);
+        use(h, p, stack);
+        h.assertTrue(stack.getCount() == 1 && rockets(h).get(0).loadedKg() == 300, "one 300 kg payload fills it");
+        h.assertTrue(rockets(h).get(0).payloads().get(0).is(net.minecraft.world.item.Items.COMPASS), "the rocket keeps the item itself");
         BlockPos abs = h.absolutePos(PAD);
-        h.getLevel().getBlockState(abs).useItemOn(stack, h.getLevel(), p, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
-        h.assertTrue(stack.isEmpty() && rockets(h).size() == 1, "the payload item stands a rocket up");
-        h.assertTrue(rockets(h).get(0).payload().is(net.minecraft.world.item.Items.COMPASS), "the rocket keeps the item itself");
-        ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank.fill(new FluidStack(Fluids.LAVA, 4000), IFluidHandler.FluidAction.EXECUTE);
+        var tank = ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank;
+        tank.fill(new FluidStack(Fluids.LAVA, 4000), IFluidHandler.FluidAction.EXECUTE);
         h.setBlock(PAD.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        h.runAfterDelay(2, () -> h.assertTrue(tank.getFluidAmount() == 3000, "the launch burnt the rocket's own 1000 mB"));
         h.succeedWhen(() -> {
+            h.assertTrue(HOOKS.equals(java.util.List.of("launched:1", "deployed:Nav-1")), "the rocket's hooks were called: " + HOOKS);
             var server = h.getLevel().getServer();
             var mine = net.createaerospace.api.AerospaceApi.satellites(server, TEST_PAYLOAD).stream().filter(x -> x.owner().equals(p.getUUID())).toList();
             h.assertTrue(rockets(h).isEmpty() && mine.size() == 1, "one satellite of the test payload in orbit");

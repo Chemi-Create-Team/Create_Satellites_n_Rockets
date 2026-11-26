@@ -68,6 +68,8 @@ public class CreateAerospace {
 
     public static final DeferredItem<SatelliteItem> SATELLITE = ITEMS.registerItem("satellite", SatelliteItem::new, new Item.Properties().stacksTo(16));
 
+    public static final DeferredItem<Item> ROCKET_ITEM = ITEMS.registerSimpleItem("rocket", new Item.Properties().stacksTo(4));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
             BLOCK_ENTITIES.register("launch_pad", () -> BlockEntityType.Builder.of(LaunchPadBlockEntity::new, LAUNCH_PAD.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GroundConsoleBlockEntity>> GROUND_CONSOLE_BE =
@@ -103,6 +105,8 @@ public class CreateAerospace {
                 e.registrar("1").playToClient(SatellitesPayload.TYPE, SatellitesPayload.CODEC, SatellitesPayload::handle));
         bus.addListener(FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
                 {
+            net.createaerospace.api.RocketApi.registerRocket(net.createaerospace.api.RocketApi.STANDARD, ROCKET_ITEM.get(),
+                    new net.createaerospace.api.RocketApi.RocketType(Component.translatable("item." + MOD_ID + ".rocket"), 1000, 4000, 200, 0.03, 2.5, 1f, 5f));
             DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get());
             net.createaerospace.compat.cfs.CfsCompat.register();
         }));
