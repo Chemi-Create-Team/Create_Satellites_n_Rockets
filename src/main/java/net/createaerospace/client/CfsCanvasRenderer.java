@@ -46,7 +46,15 @@ public final class CfsCanvasRenderer {
         g.fill(0, 0, w, h, -.002f, BACKDROP);
         tab(g, w, h, CfsLayout.TAB_CONTROL_RECT, Component.translatable(K + "tab.control"), view == View.CONTROL, CfsLayout.TAB_CONTROL.equals(hover));
         tab(g, w, h, CfsLayout.TAB_MAP_RECT, Component.translatable(K + "tab.map"), view == View.MAP, CfsLayout.TAB_MAP.equals(hover));
-        text(g, w, h, Component.translatable("screen.create_aerospace_engineering.count", all.size()), .60f, .045f, .37f, .05f, 1, AMBER);
+        var alert = SatelliteReadout.activeAlert(ClientSatellites.alerts(), c.gameTime() + c.partialTick());
+        if (alert != null) {
+            // the warning takes the place of the count, blinking
+            Rect bar = new Rect(.40f, .03f, .97f, .11f);
+            box(g, w, h, bar, -.003f, SatelliteReadout.alertLit(c.gameTime() + c.partialTick()) ? 0xFF5A0A0A : 0xFF2A0606, 0xFFFF4040);
+            text(g, w, h, SatelliteReadout.alertLine(alert), bar.l() + .01f, bar.t() + .02f, bar.r() - bar.l() - .02f, .042f, .5f, 0xFFFF7070);
+        } else {
+            text(g, w, h, Component.translatable("screen.create_aerospace_engineering.count", all.size()), .60f, .045f, .37f, .05f, 1, AMBER);
+        }
         if (view == View.CONTROL) controls(c, g, all, sel, tick, hover);
         else map(c, g, all, sel, tick, hover);
     }
@@ -60,8 +68,9 @@ public final class CfsCanvasRenderer {
             return;
         }
         var r = SatelliteReadout.of(sel, all.indexOf(sel), all.size(), tick, c.boardPos());
-        text(g, w, h, r.payloadName() == null ? Component.literal(r.name())
-                : Component.translatable(K + "status_payload", r.name(), r.payloadName()), st.l() + .02f, st.t() + .012f, .9f, .056f, 0, YELLOW);
+        Component status = r.payloadName() == null ? Component.literal(r.name()) : Component.translatable(K + "status_payload", r.name(), r.payloadName());
+        if (r.stateLine() != null) status = Component.translatable(K + "status_state", status, r.stateLine());
+        text(g, w, h, status, st.l() + .02f, st.t() + .012f, .9f, .056f, 0, YELLOW);
 
         Component[] values = {Component.literal(r.number() + " / " + r.count()), Component.literal(r.owner()),
                 Component.literal(r.lat() + "  " + r.lon()), Component.literal("X " + r.blockX() + "  Z " + r.blockZ()),
@@ -80,9 +89,9 @@ public final class CfsCanvasRenderer {
         boolean cover = c.gameTime() < c.data().getLong("CoverUntil");
         for (String id : CfsLayout.buttons(View.CONTROL)) {
             var press = SatelliteControl.parse(id);
-            boolean deorbit = press.button() == ConsoleButton.DEORBIT;
-            button(g, w, h, CfsLayout.button(View.CONTROL, id), Component.translatable(K + "button." + id + (deorbit && cover ? "_confirm" : "")),
-                    deorbit ? RED : AMBER, SatelliteControl.enabled(sel, all.size(), press), id.equals(hover));
+            boolean guarded = press.button().guarded();
+            button(g, w, h, CfsLayout.button(View.CONTROL, id), Component.translatable(K + "button." + id + (guarded && cover ? "_confirm" : "")),
+                    guarded ? RED : AMBER, SatelliteControl.enabled(sel, all.size(), press), id.equals(hover));
         }
     }
 
@@ -117,7 +126,7 @@ public final class CfsCanvasRenderer {
             double[] p = OrbitMath.subpoint(sel, tick);
             int[] b = OrbitMath.groundBlock(p);
             text(g, w, h, Component.translatable("screen.create_aerospace_engineering.selected", sel.name(), OrbitMath.fmtLat(p[0]),
-                    OrbitMath.fmtLon(p[1]), b[0], b[1], sel.altKm()), sum.l(), sum.t() + .01f, sum.r() - sum.l(), .045f, 0, AMBER);
+                    OrbitMath.fmtLon(p[1]), b[0], b[1], (int) Math.round(OrbitMath.altKm(sel, tick))), sum.l(), sum.t() + .01f, sum.r() - sum.l(), .045f, 0, AMBER);
         }
     }
 

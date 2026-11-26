@@ -35,16 +35,35 @@ public final class RocketApi {
      * What a rocket can do. {@code maxPayloadKg} is the most the payloads on it may weigh together. {@code fuelMb} is burnt from the
      * pad at lift-off. The rocket climbs {@code climbBlocks} (or until the nose nears the build limit, with a minimum margin of 4 blocks from the base) with {@code acceleration} blocks
      * per tick per tick up to {@code topSpeed} blocks per tick, then releases its payloads. {@code width} and {@code height} are the
-     * size of the entity in blocks; it stands on the pad, so the space above the pad must be free for it.
+     * size of the entity in blocks; it stands on the pad, so the space above the pad must be free for it. {@code failureChance} (0 to
+     * 1, API 5) is how often a launch fails: the rocket explodes on the way up and its payloads are lost. The game rule
+     * {@code caeLaunchFailures} turns failures off for a world.
      */
     public record RocketType(Component name, int maxPayloadKg, int fuelMb, int climbBlocks, double acceleration, double topSpeed,
-                             float width, float height) {
+                             float width, float height, double failureChance) {
+        /** The chance of a failure when a type does not give one (API 4 and older). */
+        public static final double DEFAULT_FAILURE_CHANCE = 0.03;
+
         public RocketType {
             Objects.requireNonNull(name);
             if (maxPayloadKg <= 0 || fuelMb < 0 || fuelMb > MAX_FUEL_MB || climbBlocks < 16 || climbBlocks > 1024
-                    || !(acceleration > 0) || !(topSpeed > 0) || topSpeed > 10 || !(width > 0) || width > MAX_WIDTH || !(height > 0) || height > MAX_HEIGHT) {
+                    || !(acceleration > 0) || !(topSpeed > 0) || topSpeed > 10 || !(width > 0) || width > MAX_WIDTH || !(height > 0) || height > MAX_HEIGHT
+                    || !(failureChance >= 0) || failureChance > 1) {
                 throw new IllegalArgumentException("Invalid CAE rocket type: " + name.getString());
             }
+        }
+
+        /** API 4 and older: the default failure chance. */
+        public RocketType(Component name, int maxPayloadKg, int fuelMb, int climbBlocks, double acceleration, double topSpeed, float width, float height) {
+            this(name, maxPayloadKg, fuelMb, climbBlocks, acceleration, topSpeed, width, height, DEFAULT_FAILURE_CHANCE);
+        }
+
+        /** Ticks from lift-off to the release of the payloads, if the build limit does not stop the climb first. */
+        public int ticksToOrbit() {
+            int t = 0;
+            double h = 0;
+            while (h < climbBlocks) h += Math.min(topSpeed, acceleration * ++t);
+            return t;
         }
     }
 
@@ -55,6 +74,9 @@ public final class RocketApi {
 
         /** The rocket released its payloads; {@code satellites} are the ones now in orbit, in loading order. */
         default void deployed(ServerLevel level, Entity rocket, List<AerospaceApi.SatelliteInfo> satellites) {}
+
+        /** The launch failed: the rocket is exploding and {@code payloads} (copies) are lost. API 5. */
+        default void failed(ServerLevel level, Entity rocket, List<ItemStack> payloads) {}
     }
 
     public record Registered(ResourceLocation id, Item item, RocketType type, Hooks hooks) {}

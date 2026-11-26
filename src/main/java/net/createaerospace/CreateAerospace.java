@@ -44,6 +44,11 @@ public class CreateAerospace {
     public static final String MOD_ID = "create_aerospace_engineering";
     public static final float STANDARD_ROCKET_WIDTH = 10f, STANDARD_ROCKET_HEIGHT = 60f;
 
+    /** Whether rockets can fail ({@code RocketApi.RocketType.failureChance}); on by default. */
+    public static final net.minecraft.world.level.GameRules.Key<net.minecraft.world.level.GameRules.BooleanValue> LAUNCH_FAILURES =
+            net.minecraft.world.level.GameRules.register("caeLaunchFailures", net.minecraft.world.level.GameRules.Category.MISC,
+                    net.minecraft.world.level.GameRules.BooleanValue.create(true));
+
     public static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
     public static ResourceLocation id(String path) {
@@ -106,7 +111,7 @@ public class CreateAerospace {
         bus.addListener(RegisterCapabilitiesEvent.class, e ->
                 e.registerBlockEntity(Capabilities.FluidHandler.BLOCK, LAUNCH_PAD_BE.get(), (be, side) -> be.tank));
         bus.addListener(RegisterPayloadHandlersEvent.class, e ->
-                e.registrar("1").playToClient(SatellitesPayload.TYPE, SatellitesPayload.CODEC, SatellitesPayload::handle));
+                e.registrar("2").playToClient(SatellitesPayload.TYPE, SatellitesPayload.CODEC, SatellitesPayload::handle));
         bus.addListener(FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
                 {
             net.createaerospace.api.RocketApi.registerRocket(net.createaerospace.api.RocketApi.STANDARD, ROCKET_ITEM.get(),
@@ -117,7 +122,11 @@ public class CreateAerospace {
         }));
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, e -> {
             if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer p)
-                PacketDistributor.sendToPlayer(p, new SatellitesPayload(SatelliteData.get(p.server).list()));
+                PacketDistributor.sendToPlayer(p, new SatellitesPayload(SatelliteData.get(p.server).list(), SatelliteData.get(p.server).alerts()));
+        });
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.ServerTickEvent.Post.class, e -> {
+            long now = e.getServer().overworld().getGameTime();
+            if (now % 20 == 0) SatelliteData.get(e.getServer()).tick(e.getServer(), now);
         });
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.RegisterCommandsEvent.class, e -> SatelliteCommand.register(e.getDispatcher()));
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) net.createaerospace.client.ClientSetup.init(bus);

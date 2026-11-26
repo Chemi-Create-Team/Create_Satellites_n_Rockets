@@ -21,6 +21,10 @@ public class SatelliteData extends SavedData {
     private final Map<UUID, Satellite> all = new LinkedHashMap<>();
     /** What the mod of a payload keeps on its satellite (see {@code api.AerospaceApi}). Server only, never sent to clients. */
     private final Map<UUID, CompoundTag> payloadData = new HashMap<>();
+    /** The latest warnings, oldest first. */
+    private final List<Alert> alerts = new ArrayList<>();
+    /** The last tick {@link #tick} looked at; not saved, so after a restart it starts from the next check. */
+    private long checkedUpTo = Long.MIN_VALUE;
 
     public static SatelliteData get(MinecraftServer server) {
         return server.getLevel(Level.OVERWORLD).getDataStorage().computeIfAbsent(
@@ -29,6 +33,31 @@ public class SatelliteData extends SavedData {
 
     public List<Satellite> list() {
         return new ArrayList<>(all.values());
+    }
+
+    public List<Alert> alerts() {
+        return List.copyOf(alerts);
+    }
+
+    public void alert(MinecraftServer server, Alert a) {
+        alerts.add(a);
+        while (alerts.size() > Alert.KEPT) alerts.remove(0);
+        changed(server);
+    }
+
+    /**
+     * Every second: a reentry that has begun (a commanded one, or the orbit of an abandoned satellite giving out) raises a warning, and
+     * a satellite that has burnt up leaves the list.
+     */
+    public void tick(MinecraftServer server, long now) {
+        long from = checkedUpTo == Long.MIN_VALUE ? now - 1 : checkedUpTo;
+        checkedUpTo = now;
+        for (Satellite s : list()) {
+            if (!s.reentryPlanned()) continue;
+            if (s.reentryStart() > from && s.reentryStart() <= now)
+                alert(server, new Alert(Alert.REENTRY, s.name(), s.ownerName(), 0, s.targetX(), s.targetZ(), s.reentryStart()));
+            if (now >= s.reentryEnd()) remove(server, s.id());
+        }
     }
 
     public Satellite find(UUID id) {
@@ -65,7 +94,7 @@ public class SatelliteData extends SavedData {
 
     private void changed(MinecraftServer server) {
         setDirty();
-        PacketDistributor.sendToAllPlayers(new SatellitesPayload(list()));
+        PacketDistributor.sendToAllPlayers(new SatellitesPayload(list(), alerts()));
     }
 
     @Override
@@ -77,6 +106,9 @@ public class SatelliteData extends SavedData {
             l.add(t);
         });
         tag.put("satellites", l);
+        ListTag a = new ListTag();
+        alerts.forEach(x -> a.add(x.save()));
+        tag.put("alerts", a);
         return tag;
     }
 
@@ -87,6 +119,7 @@ public class SatelliteData extends SavedData {
             d.all.put(s.id(), s);
             if (((CompoundTag) t).contains("data", Tag.TAG_COMPOUND)) d.payloadData.put(s.id(), ((CompoundTag) t).getCompound("data"));
         }
+        for (Tag t : tag.getList("alerts", Tag.TAG_COMPOUND)) d.alerts.add(Alert.load((CompoundTag) t));
         return d;
     }
 }

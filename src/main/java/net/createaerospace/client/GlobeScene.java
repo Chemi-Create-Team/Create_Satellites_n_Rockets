@@ -31,11 +31,13 @@ public final class GlobeScene {
         }
         Globes.get().drawEarth(sink, v);
         VoxelGlobe.dot(sink, v, VoxelGlobe.position(Math.toRadians(homeLatDeg), Math.toRadians(homeLonDeg), VoxelGlobe.N + 2.4), .9f, HOME);
-        for (Satellite s : all) if (s != sel) track(sink, v, s, tick, 120, 0, .22f, 0xFFB8C8E0, 0);
+        for (Satellite s : all) if (s != sel && !s.reentering(tick)) track(sink, v, s, tick, 120, 0, .22f, s.abandoned() ? 0xFF606870 : 0xFFB8C8E0, 0);
         if (sel != null) track(sink, v, sel, tick, 360, .12, .3f, YELLOW, 0xFF4A7090);
         for (Satellite s : all) {
             boolean selected = s == sel;
-            VoxelGlobe.satellite(sink, v, position(s, tick), selected ? 1.35f : 1f, selected ? YELLOW : OTHER, selected ? SEL_PANEL : OTHER_PANEL);
+            // a satellite coming down glows orange, debris is grey
+            int body = s.reentering(tick) ? 0xFFFF7020 : selected ? YELLOW : s.abandoned() ? 0xFF808890 : OTHER;
+            VoxelGlobe.satellite(sink, v, position(s, tick), selected ? 1.35f : 1f, body, selected ? SEL_PANEL : s.abandoned() ? 0xFF3A4048 : OTHER_PANEL);
         }
     }
 
@@ -53,10 +55,30 @@ public final class GlobeScene {
 
     private static double[] position(Satellite s, double tick) {
         double[] sp = OrbitMath.subpoint(s, tick);
-        return VoxelGlobe.position(sp[0], sp[1], VoxelGlobe.orbitRadius(s.tier()));
+        return VoxelGlobe.position(sp[0], sp[1], radius(s, tick));
     }
 
+    /** The drawn height of the orbit's tier; on the way down, between the tiers by the real altitude, and to the surface. */
+    private static double radius(Satellite s, double tick) {
+        if (!s.reentering(tick)) return VoxelGlobe.orbitRadius(s.tier());
+        double alt = OrbitMath.altKm(s, tick);
+        if (alt <= OrbitMath.ALT_KM[0]) return VoxelGlobe.N + (VoxelGlobe.orbitRadius(0) - VoxelGlobe.N) * alt / OrbitMath.ALT_KM[0];
+        for (int i = 1; i < OrbitMath.ALT_KM.length; i++) {
+            if (alt <= OrbitMath.ALT_KM[i]) {
+                double f = (alt - OrbitMath.ALT_KM[i - 1]) / (OrbitMath.ALT_KM[i] - OrbitMath.ALT_KM[i - 1]);
+                return VoxelGlobe.orbitRadius(i - 1) + (VoxelGlobe.orbitRadius(i) - VoxelGlobe.orbitRadius(i - 1)) * f;
+            }
+        }
+        return VoxelGlobe.orbitRadius(OrbitMath.ALT_KM.length - 1);
+    }
+
+    /** One orbit ahead; on the way down, the rest of the path to where it burns out. */
     private static void track(Sink sink, View v, Satellite s, double tick, int steps, double before, float half, int ahead, int behind) {
+        if (s.reentering(tick)) {
+            double left = s.reentryEnd() - tick;
+            for (int i = 0; i <= steps; i++) VoxelGlobe.dot(sink, v, position(s, tick + i * left / steps), half, 0xFFFF7020);
+            return;
+        }
         for (int i = -(int) Math.round(before * steps); i <= steps; i++) {
             VoxelGlobe.dot(sink, v, position(s, tick + i * s.periodTicks() / (double) steps), half, i < 0 ? behind : ahead);
         }

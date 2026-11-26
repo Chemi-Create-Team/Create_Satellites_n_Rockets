@@ -7,7 +7,9 @@ import net.createaerospace.CreateAerospace;
 import net.createaerospace.api.AerospaceApi;
 import net.createaerospace.api.RocketApi;
 import net.createaerospace.orbit.OrbitMath;
+import net.createaerospace.orbit.Alert;
 import net.createaerospace.orbit.Satellite;
+import net.createaerospace.orbit.SatelliteData;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -46,6 +48,8 @@ public class RocketEntity extends Entity {
     private final List<ItemStack> payloads = new ArrayList<>();
     private int ascent;
     private double startY = Double.NaN;
+    /** The ascent tick at which this flight fails; 0 for a good flight. Decided at lift-off. */
+    private int failAt;
 
     public RocketEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -121,6 +125,11 @@ public class RocketEntity extends Entity {
     public void launch() {
         entityData.set(ASCENDING, true);
         startY = getY();
+        var rocketType = type().type();
+        if (failAt == 0 && level().getGameRules().getBoolean(CreateAerospace.LAUNCH_FAILURES) && random.nextDouble() < rocketType.failureChance()) {
+            // somewhere between clearing the pad and the release of the payloads
+            failAt = 40 + random.nextInt(Math.max(1, (int) (rocketType.ticksToOrbit() * 0.85) - 40));
+        }
         level().playSound(null, getX(), getY(), getZ(), SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.BLOCKS, 6f, 0.5f);
         var t = type();
         try {
@@ -180,8 +189,47 @@ public class RocketEntity extends Entity {
             net.createaerospace.client.RocketRenderer.exhaust(this);
         } else {
             if (Double.isNaN(startY)) startY = getY() - speed * ascent / 2;
-            if (getY() - startY >= t.climbBlocks() || getY() >= ceiling) deploy();
+            if (failAt > 0 && ascent >= failAt) explode();
+            else if (getY() - startY >= t.climbBlocks() || getY() >= ceiling) deploy();
         }
+    }
+
+    /** Gametests only: make this flight fail at an ascent tick (or, with -1, never), whatever the chance and the game rule say. */
+    public void setFailAt(int tick) {
+        failAt = tick;
+    }
+
+    /**
+     * The flight fails: a fireball along the body, burning debris raining down, a bang heard far off, and the payloads gone. The
+     * explosion hurts what is near but breaks no blocks. Every console, map and Control Computer shows the warning for a while.
+     */
+    private void explode() {
+        var level = (ServerLevel) level();
+        var server = level.getServer();
+        double h = getBbHeight(), w = getBbWidth(), x = getX(), y = getY(), z = getZ();
+        level.explode(this, x, y + h * .35, z, 6f, net.minecraft.world.level.Level.ExplosionInteraction.NONE);
+        // the explosion packet only reaches players near it; these go as far as the rocket can be seen
+        for (ServerPlayer p : level.players()) {
+            if (p.distanceToSqr(x, y + h / 2, z) > 512 * 512) continue;
+            for (int k = 0; k <= 4; k++)
+                level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, true, x, y + h * k / 4, z, 2, w / 3, 1, w / 3, 0);
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.FLAME, true, x, y + h / 2, z, 220, w / 2, h / 2, w / 2, .25);
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, true, x, y + h / 2, z, 160, w / 2, h / 2, w / 2, .08);
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.LAVA, true, x, y + h / 2, z, 80, w, h / 2, w, 0);
+        }
+        level.playSound(null, x, y + h / 2, z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 16f, 0.55f);
+        level.playSound(null, x, y + h / 2, z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST_FAR, SoundSource.BLOCKS, 16f, 0.5f);
+        var type = type();
+        SatelliteData.get(server).alert(server, new Alert(Alert.LAUNCH_FAILURE, type.id().toString(), ownerName, payloads.size(),
+                (int) Math.floor(x), (int) Math.floor(z), server.overworld().getGameTime()));
+        if (server.getPlayerList().getPlayer(owner) instanceof ServerPlayer p)
+            p.sendSystemMessage(Component.translatable("message.create_aerospace_engineering.launch_failed", type.type().name(), payloads.size()));
+        try {
+            type.hooks().failed(level, this, payloads());
+        } catch (RuntimeException e) {
+            CreateAerospace.LOGGER.error("Rocket {} failed in failed()", type.id(), e);
+        }
+        discard();
     }
 
     private void deploy() {
@@ -234,6 +282,7 @@ public class RocketEntity extends Entity {
         syncLoad();
         entityData.set(ASCENDING, t.getBoolean("ascending"));
         ascent = t.getInt("ascent");
+        failAt = t.getInt("failAt");
         if (t.contains("startY")) startY = t.getDouble("startY");
     }
 
@@ -249,6 +298,7 @@ public class RocketEntity extends Entity {
         t.put("payloads", list);
         t.putBoolean("ascending", isAscending());
         t.putInt("ascent", ascent);
+        if (failAt != 0) t.putInt("failAt", failAt);
         if (!Double.isNaN(startY)) t.putDouble("startY", startY);
     }
 }

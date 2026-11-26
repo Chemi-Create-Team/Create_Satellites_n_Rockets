@@ -100,12 +100,13 @@ final class CfsComputerApp implements ComputerCanvas.Application {
                     player.displayClientMessage(Component.translatable(SatelliteReadout.K + "denied"), true);
                     return;
                 }
-                if (press.button() == ConsoleButton.DEORBIT && now - desk.guardOpenedAt >= GroundConsoleBlockEntity.GUARD_TICKS) {
+                // reentry and abandoning ask once more: the first click opens the cover, a second within its time does it
+                if (press.button().guarded() && now - desk.guardOpenedAt >= GroundConsoleBlockEntity.GUARD_TICKS) {
                     desk.guardOpenedAt = now;
                     return;
                 }
                 desk.guardOpenedAt = Long.MIN_VALUE / 2;
-                SatelliteControl.apply(c.level().getServer(), s, press.button(), press.up(), now);
+                SatelliteControl.apply(c.level().getServer(), s, press.button(), press.up(), now, c.boardPos());
             }
         }
     }

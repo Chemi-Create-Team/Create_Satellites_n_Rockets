@@ -8,7 +8,9 @@ import java.util.Locale;
  */
 public enum ConsoleButton {
     PREVIOUS(.15, .10, .09), NEXT(.35, .10, .09), MAP(.55, .10, .09), MODE(.75, .10, .09),
-    ALTITUDE(.22, .29, .13), INCLINATION(.50, .29, .13), DEORBIT(.85, .29, .10);
+    ALTITUDE(.22, .29, .13), INCLINATION(.50, .29, .13), DEORBIT(.85, .29, .10),
+    /** The small hazard-striped button by the near right corner; like DEORBIT it only works with the cover open. */
+    ABANDON(.92, .08, .06);
 
     public final double u, v, radius;
 
@@ -21,6 +23,11 @@ public enum ConsoleButton {
     /** Pressed on its left half it steps down, on its right half up. */
     public boolean dial() {
         return this == ALTITUDE || this == INCLINATION;
+    }
+
+    /** Under the cover: the first press opens it, a press with it open does the thing. */
+    public boolean guarded() {
+        return this == DEORBIT || this == ABANDON;
     }
 
     public String label() {

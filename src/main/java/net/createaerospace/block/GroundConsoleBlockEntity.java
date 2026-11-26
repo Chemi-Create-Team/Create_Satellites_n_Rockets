@@ -22,7 +22,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Which satellite the console has selected, and the cover over the deorbit button. Everything else is read from the satellites. */
+/** Which satellite the console has selected, and the cover over the reentry and abandon buttons. Everything else is read from the satellites. */
 public class GroundConsoleBlockEntity extends BlockEntity {
     public static final int GUARD_TICKS = 200;
 
@@ -64,7 +64,7 @@ public class GroundConsoleBlockEntity extends BlockEntity {
         Satellite s = selected();
         if (s == null) return Component.translatable("console.create_aerospace_engineering.none");
         double[] p = OrbitMath.subpoint(s, level.getGameTime());
-        return Component.literal(String.format("%s %s %s %dkm", s.name(), OrbitMath.fmtLat(p[0]), OrbitMath.fmtLon(p[1]), s.altKm()));
+        return Component.literal(String.format("%s %s %s %dkm", s.name(), OrbitMath.fmtLat(p[0]), OrbitMath.fmtLon(p[1]), (int) OrbitMath.altKm(s, level.getGameTime())));
     }
 
     public void press(net.minecraft.world.entity.player.Player player, ConsoleButton button, boolean rightHalf) {
@@ -86,17 +86,22 @@ public class GroundConsoleBlockEntity extends BlockEntity {
                     say(player, "console.create_aerospace_engineering.denied");
                     return;
                 }
-                if (button == ConsoleButton.DEORBIT) {
+                if (button.guarded()) {
+                    // the red button opens the cover; with it open, the red button sends the satellite down and the striped one abandons it
                     if (!guardOpen()) {
+                        if (button == ConsoleButton.ABANDON) {
+                            say(player, "console.create_aerospace_engineering.cover_closed");
+                            return;
+                        }
                         guardOpenedAt = now;
                         level.playSound(null, worldPosition, SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.BLOCKS, 1f, 1.2f);
                     } else {
                         guardOpenedAt = Long.MIN_VALUE / 2;
-                        SatelliteControl.apply(level.getServer(), s, button, rightHalf, now);
+                        SatelliteControl.apply(level.getServer(), s, button, rightHalf, now, worldPosition);
                         level.playSound(null, worldPosition, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 1f, 1f);
                     }
                 } else {
-                    SatelliteControl.apply(level.getServer(), s, button, rightHalf, now);
+                    SatelliteControl.apply(level.getServer(), s, button, rightHalf, now, worldPosition);
                 }
             }
         }

@@ -41,7 +41,13 @@ public class RocketGameTests {
         h.getLevel().getBlockState(abs).useItemOn(stack, h.getLevel(), player, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
     }
 
+    /** Launches in tests succeed unless a test makes one fail ({@code RocketEntity.setFailAt}). */
+    private static void noRandomFailures(GameTestHelper h) {
+        h.getLevel().getGameRules().getRule(CreateAerospace.LAUNCH_FAILURES).set(false, h.getLevel().getServer());
+    }
+
     private static void loadRocket(GameTestHelper h, Player player) {
+        noRandomFailures(h);
         h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
         ItemStack rocket = new ItemStack(CreateAerospace.ROCKET_ITEM.get());
         use(h, player, rocket);
@@ -238,13 +244,115 @@ public class RocketGameTests {
 
         c.press(stranger, ConsoleButton.DEORBIT, true);
         c.press(stranger, ConsoleButton.DEORBIT, true);
-        h.assertTrue(data.find(a.id()) != null, "a stranger cannot deorbit it");
+        h.assertTrue(!data.find(a.id()).reentryPlanned(), "a stranger cannot send it down");
         c.press(owner, ConsoleButton.DEORBIT, true);
-        h.assertTrue(data.find(a.id()) != null && c.guardOpen(), "the first press only lifts the cover");
+        h.assertTrue(!data.find(a.id()).reentryPlanned() && c.guardOpen(), "the first press only lifts the cover");
         c.press(owner, ConsoleButton.DEORBIT, true);
-        h.assertTrue(data.find(a.id()) == null && !c.guardOpen(), "the second press deorbits it and closes the cover");
+        long now = h.getLevel().getGameTime();
+        Satellite down = data.find(a.id());
+        h.assertTrue(down.reentering(now) && !c.guardOpen(), "the second press starts the reentry and closes the cover");
+        BlockPos at = h.absolutePos(CONSOLE);
+        h.assertTrue(down.targetX() == at.getX() && down.targetZ() == at.getZ(), "it comes down over the console");
+        c.press(owner, ConsoleButton.MODE, true);
+        h.assertTrue(data.find(a.id()).mode() == down.mode(), "nothing else works on a satellite coming down");
+
+        c.press(owner, ConsoleButton.NEXT, true);
+        h.assertTrue(c.selected().id().equals(b.id()), "select B");
+        c.press(owner, ConsoleButton.ABANDON, true);
+        h.assertTrue(!data.find(b.id()).abandoned(), "abandoning needs the cover open");
+        c.press(owner, ConsoleButton.DEORBIT, true);
+        c.press(owner, ConsoleButton.ABANDON, true);
+        Satellite junk = data.find(b.id());
+        h.assertTrue(junk.abandoned() && !junk.reentryPlanned() && junk.mode() == Satellite.STANDBY, "abandoned: debris, lamp off, a geostationary one stays up");
+        c.press(owner, ConsoleButton.MODE, true);
+        h.assertTrue(data.find(b.id()).mode() == Satellite.STANDBY, "nobody but an operator controls debris");
         h.assertTrue(c.summary().getString().length() > 0, "the display link has something to show");
+        data.remove(server, a.id());
         data.remove(server, b.id());
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty", batch = "rocket_failure", timeoutTicks = 300)
+    public static void aFailedLaunchExplodesLosesItsPayloadsAndWarnsEveryConsole(GameTestHelper h) {
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        loadRocket(h, p);
+        var tank = ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank;
+        tank.fill(new FluidStack(Fluids.LAVA, 4000), IFluidHandler.FluidAction.EXECUTE);
+        rockets(h).get(0).setFailAt(30);
+        var data = SatelliteData.get(h.getLevel().getServer());
+        int alertsBefore = data.alerts().size();
+        long launchedAt = h.getLevel().getGameTime();
+        h.setBlock(PAD.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        h.succeedWhen(() -> {
+            h.assertTrue(rockets(h).isEmpty(), "the rocket is gone");
+            var last = data.alerts().get(data.alerts().size() - 1);
+            h.assertTrue(data.alerts().size() > alertsBefore || last.time() >= launchedAt, "a warning was raised");
+            h.assertTrue(last.kind() == net.createaerospace.orbit.Alert.LAUNCH_FAILURE && last.count() == 1
+                    && last.subject().equals(net.createaerospace.api.RocketApi.STANDARD.toString()), "a launch failure of the standard rocket with one payload");
+            h.assertTrue(last.shown(h.getLevel().getGameTime()), "and it is shown now");
+            h.assertTrue(mine(h, p) == 0, "nothing reached orbit");
+            h.assertTrue(h.getBlockState(PAD).is(CreateAerospace.LAUNCH_PAD.get()), "the explosion breaks no blocks");
+        });
+    }
+
+    @GameTest(template = "test_empty", batch = "reentry", timeoutTicks = 200)
+    public static void aReentryComesDownOverItsTargetAsAFireballAndIsRemoved(GameTestHelper h) {
+        var server = h.getLevel().getServer();
+        var data = SatelliteData.get(server);
+        long now = h.getLevel().getGameTime();
+        int tx = 5000, tz = -3000;
+        Satellite geo = Satellite.deployed("Fall", java.util.UUID.randomUUID(), "o", 60, now);
+        Satellite s = geo.reenter(now, tx, tz);
+        int D = net.createaerospace.orbit.OrbitMath.REENTRY_DESCENT_TICKS, F = net.createaerospace.orbit.OrbitMath.REENTRY_FIRE_TICKS;
+        h.assertTrue(net.createaerospace.orbit.OrbitMath.altKm(s, now + D / 2.0) < geo.altKm() && net.createaerospace.orbit.OrbitMath.altKm(s, now + D) <= 120.01,
+                "it sinks to the top of the fireball during the descent");
+        h.assertTrue(!s.burning(now + D - 1) && s.burning(now + D + 1) && s.burning(now + D + F - 1) && !s.burning(now + D + F), "it burns only during the fireball");
+        java.util.function.DoubleUnaryOperator fromTarget = t -> {
+            int[] b = net.createaerospace.orbit.OrbitMath.groundBlock(net.createaerospace.orbit.OrbitMath.subpoint(s, t));
+            return Math.hypot(b[0] - tx, b[1] - tz);
+        };
+        // 4 degrees before and half a degree past the target, 0.7 degrees to its side
+        h.assertTrue(Math.abs(fromTarget.applyAsDouble(now + D) - Math.hypot(4000, 700)) < 150, "the fireball starts 4 degrees before the target, got " + fromTarget.applyAsDouble(now + D));
+        h.assertTrue(Math.abs(fromTarget.applyAsDouble(now + D + F) - Math.hypot(500, 700)) < 80, "and burns out half a degree past it, got " + fromTarget.applyAsDouble(now + D + F));
+        double closest = Double.MAX_VALUE;
+        for (int i = 0; i <= 20; i++) closest = Math.min(closest, fromTarget.applyAsDouble(now + D + F * i / 20.0));
+        h.assertTrue(Math.abs(closest - 700) < 80, "passing beside the target, not over it, got " + closest);
+        var high = net.createaerospace.orbit.OrbitMath.lookFromBlock(s, now + D + F * 0.85, tx, tz);
+        var low = net.createaerospace.orbit.OrbitMath.lookFromBlock(s, now + D + F * 0.15, tx, tz);
+        h.assertTrue(Math.toDegrees(high.elevation()) > 20 && Math.toDegrees(low.elevation()) > 5, "seen up in the sky from the target, got "
+                + Math.toDegrees(low.elevation()) + " then " + Math.toDegrees(high.elevation()));
+        h.assertTrue(Math.abs(Math.toDegrees(high.azimuth() - low.azimuth())) > 20, "and moving across it, not straight at the watcher");
+        h.assertTrue(net.createaerospace.orbit.OrbitMath.subpoint(s, now - 10)[1] == net.createaerospace.orbit.OrbitMath.subpoint(geo, now - 10)[1],
+                "before the reentry it is where its orbit says");
+
+        // one that has already burnt up, and one about to start: the server tick removes the first and warns about the second
+        Satellite gone = Satellite.deployed("Gone", java.util.UUID.randomUUID(), "o", 61, now).reenter(now - D - F - 5, tx, tz);
+        Satellite soon = Satellite.deployed("Soon", java.util.UUID.randomUUID(), "o", 62, now).reenter(now + 5, tx, tz);
+        data.put(server, gone);
+        data.put(server, soon);
+        h.succeedWhen(() -> {
+            h.assertTrue(data.find(gone.id()) == null, "a burnt-up satellite leaves the list");
+            h.assertTrue(data.alerts().stream().anyMatch(a -> a.kind() == net.createaerospace.orbit.Alert.REENTRY && a.subject().equals("Soon")),
+                    "a reentry that begins raises a warning");
+            data.remove(server, soon.id());
+        });
+    }
+
+    @GameTest(template = "test_empty", batch = "abandon")
+    public static void anAbandonedLowSatelliteDecaysAndAHighOneStaysUp(GameTestHelper h) {
+        var server = h.getLevel().getServer();
+        long now = h.getLevel().getGameTime();
+        java.util.UUID owner = java.util.UUID.randomUUID();
+        Satellite low = Satellite.deployed("Low", owner, "o", 0, now).retuned(0, 2, now);
+        Satellite a = net.createaerospace.orbit.SatelliteControl.abandoned(server, low, now);
+        h.assertTrue(a.abandoned() && a.reentryStart() >= now + 24000 && a.reentryStart() <= now + 72000, "the lowest orbit comes down in 1 to 3 days");
+        h.assertTrue(!a.reentering(now) && !a.controlledBy(owner, false) && a.controlledBy(owner, true), "debris: only an operator controls it");
+        Satellite high = net.createaerospace.orbit.SatelliteControl.abandoned(server, Satellite.deployed("High", owner, "o", 0, now), now);
+        h.assertTrue(high.abandoned() && !high.reentryPlanned(), "a geostationary one stays up");
+        var sp = server.overworld().getSharedSpawnPos();
+        h.assertTrue(Math.abs(a.targetX() - sp.getX()) <= 1500 && Math.abs(a.targetZ() - sp.getZ()) <= 1500, "it falls near the spawn");
+        var saved = Satellite.load(a.save());
+        h.assertTrue(saved.equals(a), "abandoning and the planned reentry are saved");
         h.succeed();
     }
 
@@ -319,6 +427,7 @@ public class RocketGameTests {
     public static void aRocketCarriesThePayloadOfAnotherModToOrbit(GameTestHelper h) {
         registerTestPayload();
         registerTestRocket();
+        noRandomFailures(h);
         HOOKS.clear();
         Player p = h.makeMockPlayer(GameType.SURVIVAL);
         h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());

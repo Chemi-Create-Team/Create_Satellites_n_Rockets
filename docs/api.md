@@ -13,8 +13,8 @@ GPSや通信の中継のような機能は、登録したMODが衛星の位置�
 
 ## 組み込む
 
-1. `dist/create-aerospace-engineering-api-0.1.10.jar` を `compileOnly` に追加します。ハッシュは `dist/SHA256SUMS` にあります。
-2. `neoforge.mods.toml` で `create_aerospace_engineering` を `type = "optional"`、`versionRange = "[0.1.7,)"`（幅16・高さ100までの寸法を使う場合は `[0.1.10,)`、幅10・高さ60までなら `[0.1.8,)`、重さやロケットを使わない場合は `[0.1.6,)`） として宣言します。
+1. `dist/create-aerospace-engineering-api-0.1.11.jar` を `compileOnly` に追加します。ハッシュは `dist/SHA256SUMS` にあります。
+2. `neoforge.mods.toml` で `create_aerospace_engineering` を `type = "optional"`、`versionRange = "[0.1.7,)"`（失敗の確率・`Hooks.failed`・`state` を使う場合は `[0.1.11,)`、幅16・高さ100までの寸法を使う場合は `[0.1.10,)`、幅10・高さ60までなら `[0.1.8,)`、重さやロケットを使わない場合は `[0.1.6,)`） として宣言します。
 3. CAEのクラスを参照するのは連携用の1クラスだけにし、`ModList.get().isLoaded("create_aerospace_engineering")` を確かめてから呼びます。CAEがない環境では、そのクラスを読み込みません。
 
 ```java
@@ -88,7 +88,8 @@ final class ExampleCaeCompat {
 `SatelliteInfo` には、ID・名前・持ち主・ペイロードの種類・データのコピー・高度（km）・傾斜角（度）・周期（tick）・モード（0待機・1ビーコン・2点滅）・真下の緯度経度とブロック座標が入ります。位置は毎tick変わるので、保持せずに必要なときに呼び直してください。
 
 - すべてサーバースレッドから呼びます。
-- `removed` は、衛星がコンソールの軌道離脱かコマンドで取り除かれる直前に呼ばれます。データはまだ読めます。
+- `removed` は、衛星が再突入で燃え尽きたとき、またはコマンドで取り除かれる直前に呼ばれます。データはまだ読めます。
+- `state(server, uuid)`（API 5）は `ACTIVE`（運用中）・`ABANDONED`（放棄されたデブリ）・`REENTERING`（再突入中、まもなく `removed`）を返します。GPSや中継のように衛星の働きを使う機能は、`ACTIVE` だけを数えてください。`satellites` と `visibleFrom` は3つとも返します。再突入中の高度と位置は落ちていく今の値です。
 - 登録したMODを外したワールドでも衛星は残ります。表示上の積荷名が消え、`payload` のIDは残るので、MODを戻せば続きから使えます。
 - `massKg` はクライアントでもツールチップのために呼ばれます。スタックだけから決め、ワールドを見ないでください。
 - `deploy` と `removed` で例外が出ても、CAEは記録して続けます（衛星は失われません）。
@@ -117,6 +118,9 @@ RocketApi.registerRocket(HEAVY, ExampleItems.HEAVY_LIFTER.get(), new RocketApi.R
 
     @Override
     public void deployed(ServerLevel level, Entity rocket, List<AerospaceApi.SatelliteInfo> satellites) { /* 放出した衛星 */ }
+
+    @Override
+    public void failed(ServerLevel level, Entity rocket, List<ItemStack> payloads) { /* 打ち上げ失敗、積荷は失われる（API 5） */ }
 });
 ```
 
@@ -145,6 +149,7 @@ RocketRenderers.register(HEAVY, new RocketRenderers.Renderer() {
 - 描画を登録しなかった種類は、CAEのロケットのモデルを登録された幅・高さに合わせて描きます。
 - CAEのH3ロケット（`rocket/H3`、描画は `client/H3Renderer`）もこのAPIで登録しています。旋盤の輪郭（高さと半径の組）で機体を作り、分離や噴射を描く例として参照できます。
 - `Context` には種類のID、アイテム、上昇中か、上昇のtick数、積載重量・最大積載量・積んだ数、幅・高さ、ゲーム時刻、partialTick、PoseStack、バッファ、明るさが入ります。
+- `RocketType` の9番目の値 `failureChance`（0〜1、API 5）は打ち上げに失敗する確率です。8つの値のコンストラクタ（API 4以前）では `DEFAULT_FAILURE_CHANCE` = 3% になります。失敗はゲームルール `caeLaunchFailures` で止められます。
 - `Hooks` と `Renderer` の例外はCAEが記録して続けます（ロケットも衛星も失われません。描画の例外は種類ごとに1回だけ記録）。
 - 同じID・同じアイテムの二重登録や、ペイロードとして登録済みのアイテムは例外になります。範囲外の数値は `RocketType` の作成時に例外になります。
 

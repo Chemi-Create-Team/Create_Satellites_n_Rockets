@@ -39,7 +39,12 @@ the one you want.
 - Row of four: **previous**, **next** (choose a satellite), **map**, **mode** (standby, beacon, flash).
 - Two dials, **altitude** and **inclination**: click the left half to step down, the right half to step up. A change
   keeps the satellite where it is and sets it on the new orbit.
-- **Deorbit** is under a cover. The first click lifts the cover, a second click within ten seconds removes the satellite.
+- **Reentry** is under a cover. The first click lifts the cover, a second click within ten seconds sends the satellite down: after a
+  minute's descent it burns up as a bright **fireball** streaking across the sky over the console, by day as well.
+- **Abandon** (the small yellow-and-black button in the near right corner) works only while the cover is open. An abandoned
+  satellite is debris nobody but an operator controls; a low one decays and reenters by itself after a few days.
+- Now and then (3%) a **launch fails**: the rocket explodes on the way up and its payloads are lost. Every console, the map and the
+  Control Computer app show a blinking warning for five minutes. The game rule `caeLaunchFailures` turns failures off.
 - The screen shows the selected satellite's latitude and longitude, **the block coordinates under it**, orbit, mode and
   whether it is above your horizon. The **map** opens a mission control screen: the Earth as a sphere of cubes with every satellite over it as a small voxel model and the orbit of the selected one (yellow) drawn in 3D (drag to turn the Earth), the list of satellites on the left and the readout of the selected one on the right.
 
@@ -66,8 +71,8 @@ without Frontier Science nothing changes.
 
 - **Controls** tab: the satellite the computer has selected (name, owner, latitude and longitude, the block coordinates under it,
   altitude, inclination, period, mode, and whether it is above the horizon of the board) and the console's buttons: **previous**,
-  **next**, **mode**, altitude and inclination (**-** and **+**), and **deorbit** (the first press asks for confirmation, the second
-  within ten seconds deorbits).
+  **next**, **mode**, altitude and inclination (**-** and **+**), **reentry** and **abandon** (the first press asks for
+  confirmation, the second within ten seconds does it).
 - **Map** tab: the same cube Earth with the satellites over it, seen from over the board; **previous** / **next** and **turn left** / **turn right** (45 degrees a step).
 - It does not need a Ground Control Console block. Each computer keeps its own view and selection (forgotten on a restart). Only the owner of a
   satellite (or an operator) can change it, as on the console.

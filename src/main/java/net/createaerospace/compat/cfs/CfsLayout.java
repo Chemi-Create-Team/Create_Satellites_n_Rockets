@@ -48,8 +48,8 @@ public final class CfsLayout {
         int i = buttons(v).indexOf(id);
         if (i < 0) return null;
         if (v == View.MAP) return new Rect(.03f + i * .18f, .88f, .20f + i * .18f, .96f);
-        float left = .03f + (i % 4) * .2375f, top = .66f + (i / 4) * .155f;
-        return new Rect(left, top, left + .2225f, top + .135f);
+        float left = .03f + (i % 5) * .19f, top = .66f + (i / 5) * .155f;
+        return new Rect(left, top, left + .175f, top + .135f);
     }
 
     /** The tab or button at a point, or null. */

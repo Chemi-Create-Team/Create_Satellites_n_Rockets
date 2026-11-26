@@ -50,6 +50,8 @@ public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleB
         boolean open = be.guardOpen();
         if (open) quad(q, ps, ConsoleButton.DEORBIT.u, ConsoleButton.DEORBIT.v, .07f, 0xFF2020, 255, 0);
         else quad(q, ps, ConsoleButton.DEORBIT.u, ConsoleButton.DEORBIT.v, .1f, 0xFF3030, 110, .02f);
+        // the abandon button is live only while the cover is open
+        if (open) quad(q, ps, ConsoleButton.ABANDON.u, ConsoleButton.ABANDON.v, .05f, 0xFFD020, SatelliteReadout.alertLit(level.getGameTime() + partial) ? 200 : 90, .001f);
 
         long now = level.getGameTime();
         ps.pushPose();
@@ -57,16 +59,22 @@ public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleB
         ps.mulPose(Axis.XP.rotationDegrees(90));
         ps.scale(TEXT_SCALE, TEXT_SCALE, -TEXT_SCALE);
         int y = 0;
-        var lines = lines(be, s, now + partial);
+        var lines = new java.util.ArrayList<>(lines(be, s, now + partial));
+        var alert = SatelliteReadout.activeAlert(ClientSatellites.alerts(), now + partial);
+        if (alert != null && SatelliteReadout.alertLit(now + partial)) lines.add(0, SatelliteReadout.alertLine(alert));
+        else if (alert != null) lines.add(0, Component.empty());
+        // ponytail: more than eight lines shrink as a block to stay on the screen
+        float squeeze = Math.min(1f, 8f / lines.size());
+        ps.scale(squeeze, squeeze, 1);
         for (var line : lines) {
             // squeeze a line that would run past the screen instead of guessing at string lengths in every language
-            float fit = Math.min(1f, MAX_LINE_WIDTH / Math.max(1, font.width(line)));
+            float fit = Math.min(1f, MAX_LINE_WIDTH / squeeze / Math.max(1, font.width(line)));
             ps.pushPose();
             ps.translate(0, y, 0);
             ps.scale(fit, fit, 1);
             font.drawInBatch(line.getVisualOrderText(), 0, 0, 0x55FF77, false, ps.last().pose(), buffers, Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
             ps.popPose();
-            y += lines.size() > 7 ? 8 : 9;
+            y += 9;
         }
         ps.popPose();
         ps.popPose();

@@ -29,7 +29,7 @@ import net.minecraft.world.item.ItemStack;
  * {@code ModList.get().isLoaded("create_aerospace_engineering")}. See {@code docs/api.md}.
  */
 public final class AerospaceApi {
-    public static final int API_VERSION = 4;
+    public static final int API_VERSION = 5;
     /** The mass of CAE's own satellite, and of a payload that does not say. */
     public static final int DEFAULT_MASS_KG = 500;
     /** The largest payload data kept on one satellite, in bytes of NBT. */
@@ -60,7 +60,7 @@ public final class AerospaceApi {
             return new CompoundTag();
         }
 
-        /** The satellite is leaving orbit (deorbited from a console or removed by a command). Its data is still readable. */
+        /** The satellite has left orbit: burnt up after a reentry, or removed by a command. Its data is still readable. */
         default void removed(MinecraftServer server, SatelliteInfo satellite) {}
     }
 
@@ -113,6 +113,20 @@ public final class AerospaceApi {
     public static Optional<Component> payloadName(ResourceLocation id) {
         Payload p = id == null ? null : payload(id);
         return p == null ? Optional.empty() : Optional.of(p.name());
+    }
+
+    /**
+     * How a satellite is doing (API 5): {@code ACTIVE} in orbit under its owner; {@code ABANDONED}, debris that nobody but an operator
+     * controls (a low one decays and comes down after some days); {@code REENTERING}, on its way down, burning up within about a
+     * minute and a quarter and then removed (with {@link Payload#removed}). A GPS or a relay should not count the last two.
+     */
+    public enum State { ACTIVE, ABANDONED, REENTERING }
+
+    public static Optional<State> state(MinecraftServer server, UUID id) {
+        Satellite s = SatelliteData.get(server).find(id);
+        if (s == null) return Optional.empty();
+        long now = server.overworld().getGameTime();
+        return Optional.of(s.reentering(now) || s.reentryPlanned() && !s.abandoned() ? State.REENTERING : s.abandoned() ? State.ABANDONED : State.ACTIVE);
     }
 
     /** Every satellite in orbit, in the order they were launched. */
@@ -168,7 +182,7 @@ public final class AerospaceApi {
     static SatelliteInfo info(Satellite s, SatelliteData data, long now) {
         double[] p = OrbitMath.subpoint(s, now);
         int[] b = OrbitMath.groundBlock(p);
-        return new SatelliteInfo(s.id(), s.name(), s.owner(), s.ownerName(), typeOf(s), data.data(s.id()), s.altKm(),
+        return new SatelliteInfo(s.id(), s.name(), s.owner(), s.ownerName(), typeOf(s), data.data(s.id()), (int) Math.round(OrbitMath.altKm(s, now)),
                 OrbitMath.INCLINATION_DEG[s.incl()], s.periodTicks(), s.mode(), Math.toDegrees(p[0]), Math.toDegrees(p[1]), b[0], b[1]);
     }
 

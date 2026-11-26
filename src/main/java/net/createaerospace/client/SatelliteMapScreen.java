@@ -93,6 +93,16 @@ public class SatelliteMapScreen extends Screen {
         }
         g.disableScissor();
 
+        // a recent launch failure or reentry blinks over the top of the globe
+        var alert = SatelliteReadout.activeAlert(ClientSatellites.alerts(), tick);
+        if (alert != null) {
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 260);
+            g.fill(x0, y0, x0 + size, y0 + 13, SatelliteReadout.alertLit(tick) ? 0xD0400808 : 0xA0200404);
+            fit(g, SatelliteReadout.alertLine(alert), x0 + 3, y0 + 3, size - 6, 0xFFFF6060, true);
+            g.pose().popPose();
+        }
+
         // under the globe: the selected satellite on one line, then the legend
         int ty = y0 + size + 7;
         if (sel == null) {
@@ -101,7 +111,7 @@ public class SatelliteMapScreen extends Screen {
             double[] p = OrbitMath.subpoint(sel, tick);
             int[] b = OrbitMath.groundBlock(p);
             fit(g, Component.translatable("screen.create_aerospace_engineering.selected", sel.name(), OrbitMath.fmtLat(p[0]),
-                    OrbitMath.fmtLon(p[1]), b[0], b[1], sel.altKm()), areaX, ty, areaW, AMBER, true);
+                    OrbitMath.fmtLon(p[1]), b[0], b[1], (int) Math.round(OrbitMath.altKm(sel, tick))), areaX, ty, areaW, AMBER, true);
         }
         fit(g, Component.translatable("screen.create_aerospace_engineering.legend"), areaX, ty + 11, areaW, DIM, true);
 
