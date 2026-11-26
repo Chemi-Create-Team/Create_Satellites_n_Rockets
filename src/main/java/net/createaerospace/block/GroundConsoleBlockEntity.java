@@ -64,7 +64,7 @@ public class GroundConsoleBlockEntity extends BlockEntity {
         Satellite s = selected();
         if (s == null) return Component.translatable("console.create_aerospace_engineering.none");
         double[] p = OrbitMath.subpoint(s, level.getGameTime());
-        return Component.literal(String.format("%s %s %s %dkm", s.name(), OrbitMath.fmtLat(p[0]), OrbitMath.fmtLon(p[1]), (int) OrbitMath.altKm(s, level.getGameTime())));
+        return Component.literal(String.format(java.util.Locale.ROOT, "%s %s %s %dkm", s.name(), OrbitMath.fmtLat(p[0]), OrbitMath.fmtLon(p[1]), (int) Math.round(OrbitMath.altKm(s, level.getGameTime()))));
     }
 
     public void press(net.minecraft.world.entity.player.Player player, ConsoleButton button, boolean rightHalf) {

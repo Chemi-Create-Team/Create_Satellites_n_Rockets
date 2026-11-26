@@ -86,11 +86,12 @@ public final class CfsCanvasRenderer {
             text(g, w, h, Component.translatable(K + "reading." + keys[i]), left + .012f, top + .018f, cw - .024f, .032f, 0, DIM);
             text(g, w, h, values[i], left + .012f, top + ch * .46f, cw - .024f, ch * .42f, 0, colors[i]);
         }
-        boolean cover = c.gameTime() < c.data().getLong("CoverUntil");
+        // only the guarded button pressed once asks for its confirmation
+        String armed = c.gameTime() < c.data().getLong("CoverUntil") ? c.data().getString("Armed") : "";
         for (String id : CfsLayout.buttons(View.CONTROL)) {
             var press = SatelliteControl.parse(id);
             boolean guarded = press.button().guarded();
-            button(g, w, h, CfsLayout.button(View.CONTROL, id), Component.translatable(K + "button." + id + (guarded && cover ? "_confirm" : "")),
+            button(g, w, h, CfsLayout.button(View.CONTROL, id), Component.translatable(K + "button." + id + (guarded && id.equals(armed) ? "_confirm" : "")),
                     guarded ? RED : AMBER, SatelliteControl.enabled(sel, all.size(), press), id.equals(hover));
         }
     }

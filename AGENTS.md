@@ -8,6 +8,7 @@ CAE（旧名 Create: Satellites 'n' Rockets）は、ロケットを発射台か�
 | --- | --- |
 | 現行仕様 | 機能別の詳しい仕様は [docs/README.md](docs/README.md) から各ページ。概要は [README.md](README.md)（英語）と [README.ja.md](README.ja.md)（日本語。内容を一致させる） |
 | 変更履歴 | [CHANGELOG.md](CHANGELOG.md)。1つの版につき1項目 |
+| 導入・任意連携 | [dist/README.md](dist/README.md)（配布案内）。版・必須環境・任意連携の対応版・API JARの一覧。版を上げたら題名と表を直す |
 | ID・版 | `gradle.properties` と `CreateAerospace.MOD_ID`。mod ID `create_aerospace_engineering`、Java `net.createaerospace` |
 | 表示名 | `mod_name`（`gradle.properties`）と `itemGroup.create_aerospace_engineering`（`lang/*.json`）、READMEの題名。現行は「Create: Aerospace Engineering」 |
 | 依存 | NeoForge 21.1.228+（Minecraft 1.21.1）、Create 6.0.10+。RnRは任意。版の基準は `gradle.properties` |

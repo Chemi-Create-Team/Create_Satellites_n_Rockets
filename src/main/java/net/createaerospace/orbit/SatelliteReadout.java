@@ -23,7 +23,7 @@ public record SatelliteReadout(String name, int number, int count, String lat, S
         int[] block = OrbitMath.groundBlock(p);
         var look = OrbitMath.lookFromBlock(s, tick, viewer.getX() + .5, viewer.getZ() + .5);
         return new SatelliteReadout(s.name(), index + 1, count, OrbitMath.fmtLat(p[0]), OrbitMath.fmtLon(p[1]), block[0], block[1],
-                (int) Math.round(OrbitMath.altKm(s, tick)), OrbitMath.INCLINATION_DEG[s.incl()], String.format("%.1f", s.periodTicks() / 1200.0), s.mode(),
+                (int) Math.round(OrbitMath.altKm(s, tick)), OrbitMath.INCLINATION_DEG[s.incl()], String.format(java.util.Locale.ROOT, "%.1f", s.periodTicks() / 1200.0), s.mode(),
                 look.elevation() > 0, (int) Math.toDegrees(look.elevation()), (int) Math.floorMod((long) Math.toDegrees(look.azimuth()), 360L),
                 s.ownerName(), s.payload(), state(s, tick),
                 s.reentering(tick) || s.reentryPlanned() ? (long) (s.reentering(tick) ? s.reentryEnd() - tick : s.reentryStart() - tick) : -1);

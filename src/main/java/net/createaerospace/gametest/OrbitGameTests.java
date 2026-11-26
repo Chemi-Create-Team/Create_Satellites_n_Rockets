@@ -110,6 +110,34 @@ public class OrbitGameTests {
         h.succeed();
     }
 
+    /** README: a new inclination keeps the satellite over the same spot whenever the new orbit passes over it, and its heading. */
+    @GameTest(template = "test_empty")
+    public static void changingInclinationKeepsThePointUnderTheSatellite(GameTestHelper h) {
+        for (int from = 0; from < 4; from++) {
+            for (int to = 0; to < 4; to++) {
+                for (double phase0 = 0.1; phase0 < 6.3; phase0 += 0.37) {
+                    Satellite s = sat(1, from, 0.9, phase0);
+                    Satellite r = s.retuned(1, to, 1500);
+                    double[] a = OrbitMath.subpoint(s, 1500), b = OrbitMath.subpoint(r, 1500);
+                    double limit = Math.toRadians(OrbitMath.INCLINATION_DEG[to]);
+                    String what = "incl " + from + " -> " + to + ", phase " + phase0;
+                    near(h, OrbitMath.wrap(a[1] - b[1]), 0, 1e-9, "longitude kept, " + what);
+                    near(h, b[0], Math.max(-limit, Math.min(limit, a[0])), 1e-9, "latitude kept or brought to the new inclination, " + what);
+                    // away from where either orbit turns back towards the equator
+                    if (from > 0 && to > 0 && Math.abs(a[0]) < Math.min(limit, Math.toRadians(OrbitMath.INCLINATION_DEG[from])) - 0.05) {
+                        double da = OrbitMath.subpoint(s, 1510)[0] - a[0], db = OrbitMath.subpoint(r, 1510)[0] - b[0];
+                        h.assertTrue(Math.signum(da) == Math.signum(db), "still heading the same way, " + what);
+                    }
+                }
+            }
+        }
+        Satellite geo = Satellite.deployed("T", OWNER, "o", -70, 3333);
+        double[] p = OrbitMath.subpoint(geo.retuned(3, 3, 9000), 9000);
+        near(h, p[0], 0, 1e-9, "a tilted geostationary satellite starts from the equator");
+        near(h, Math.toDegrees(p[1]), -70, 1e-6, "over its launch longitude");
+        h.succeed();
+    }
+
     @GameTest(template = "test_empty")
     public static void satellitesSurviveSavingAndTheNetwork(GameTestHelper h) {
         Satellite s = sat(2, 3, 1.25, -0.5).withMode(Satellite.FLASH);

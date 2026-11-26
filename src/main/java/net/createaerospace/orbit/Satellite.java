@@ -60,10 +60,31 @@ public record Satellite(UUID id, String name, UUID owner, String ownerName, int 
         return phase0 + 2 * Math.PI * (tick - epoch) / periodTicks();
     }
 
-    /** Changing the orbit keeps the angle along it, so a new altitude is continuous and a new plane repositions the satellite. */
+    /**
+     * A new orbit from the place the satellite is at. A new altitude keeps the plane and the angle along it. A new inclination turns
+     * the plane about the point under the satellite, so it stays over the same latitude and longitude and keeps heading north or
+     * south as it did; when it is further from the equator than the new inclination allows, it keeps its longitude and moves to the
+     * nearest latitude the new orbit reaches (the equator for 0 degrees).
+     */
     public Satellite retuned(int newTier, int newIncl, long now) {
-        double u = phase(now);
-        return new Satellite(id, name, owner, ownerName, newTier, newIncl, raan, u, now, mode, payload, abandoned, reentryStart, targetX, targetZ);
+        double u = phase(now), r = raan;
+        if (newIncl != incl) {
+            double i0 = Math.toRadians(OrbitMath.INCLINATION_DEG[incl]), i1 = Math.toRadians(OrbitMath.INCLINATION_DEG[newIncl]);
+            // where it is in the frame the Earth turns in
+            double x = Math.cos(r) * Math.cos(u) - Math.sin(r) * Math.cos(i0) * Math.sin(u);
+            double y = Math.sin(r) * Math.cos(u) + Math.cos(r) * Math.cos(i0) * Math.sin(u);
+            double lat = Math.asin(Math.max(-1, Math.min(1, Math.sin(i0) * Math.sin(u)))), lon = Math.atan2(y, x);
+            if (OrbitMath.INCLINATION_DEG[newIncl] == 0) {
+                u = 0;
+                r = lon;
+            } else {
+                double a = Math.asin(Math.max(-1, Math.min(1, Math.sin(lat) / Math.sin(i1))));
+                boolean northbound = OrbitMath.INCLINATION_DEG[incl] == 0 || Math.cos(u) >= 0;
+                u = northbound ? a : Math.PI - a;
+                r = lon - Math.atan2(Math.cos(i1) * Math.sin(u), Math.cos(u));
+            }
+        }
+        return new Satellite(id, name, owner, ownerName, newTier, newIncl, r, u, now, mode, payload, abandoned, reentryStart, targetX, targetZ);
     }
 
     public Satellite withMode(int newMode) {

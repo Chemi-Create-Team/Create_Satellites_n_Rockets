@@ -32,7 +32,7 @@ public final class SatelliteCommand {
 
     static String position(Satellite s, long tick) {
         double[] p = OrbitMath.subpoint(s, tick);
-        return String.format("%s  %s %s  %d km  %d min/orbit", s.name(), OrbitMath.fmtLat(p[0]), OrbitMath.fmtLon(p[1]),
+        return String.format(java.util.Locale.ROOT, "%s  %s %s  %d km  %d min/orbit", s.name(), OrbitMath.fmtLat(p[0]), OrbitMath.fmtLon(p[1]),
                 (int) Math.round(OrbitMath.altKm(s, tick)), s.periodTicks() / 1200);
     }
 

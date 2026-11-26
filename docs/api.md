@@ -15,7 +15,17 @@ GPSや通信の中継のような機能は、登録したMODが衛星の位置�
 
 1. `dist/create-aerospace-engineering-api-0.1.11.jar` を `compileOnly` に追加します。ハッシュは `dist/SHA256SUMS` にあります。
 2. `neoforge.mods.toml` で `create_aerospace_engineering` を `type = "optional"`、`versionRange = "[0.1.7,)"`（失敗の確率・`Hooks.failed`・`state` を使う場合は `[0.1.11,)`、幅16・高さ100までの寸法を使う場合は `[0.1.10,)`、幅10・高さ60までなら `[0.1.8,)`、重さやロケットを使わない場合は `[0.1.6,)`） として宣言します。
-3. CAEのクラスを参照するのは連携用の1クラスだけにし、`ModList.get().isLoaded("create_aerospace_engineering")` を確かめてから呼びます。CAEがない環境では、そのクラスを読み込みません。
+3. 実行時に `API_VERSION` を確かめるときは、**必要な版以上か**（`>=`）で比べます。`API_VERSION` は機能を足すたびに上がり、それまでの呼び出しは同じ意味のまま使えます。等号（`== 1` など）で比べると、新しいCAEで連携が止まります。
+
+   | `API_VERSION` | CAE | 足したもの |
+   | --- | --- | --- |
+   | 1 | 0.1.6 | ペイロードAPI |
+   | 2 | 0.1.7 | 重さ（`massKg`）、ロケットAPI |
+   | 3 | 0.1.8 | ロケットの大きさ 幅10・高さ60まで |
+   | 4 | 0.1.10 | ロケットの大きさ 幅16・高さ100まで |
+   | 5 | 0.1.11 | `failureChance`、`Hooks.failed`、`state` |
+
+4. CAEのクラスを参照するのは連携用の1クラスだけにし、`ModList.get().isLoaded("create_aerospace_engineering")` を確かめてから呼びます。CAEがない環境では、そのクラスを読み込みません。
 
 ```java
 // FMLCommonSetupEvent.enqueueWork の中（サーバーとクライアントの両方。クライアントはペイロード名の表示に使う）

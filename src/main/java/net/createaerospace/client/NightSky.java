@@ -57,7 +57,6 @@ public final class NightSky {
         RenderSystem.setShaderColor(1, 1, 1, 1);
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        boolean any = false;
         for (Satellite s : ClientSatellites.get()) {
             if (s.burning(tick)) continue;
             var now = OrbitMath.lookFromBlock(s, tick, cam.x, cam.z);
@@ -78,13 +77,14 @@ public final class NightSky {
                 Vector3f p = new Vector3f((float) dir[0], (float) dir[1], (float) dir[2]).normalize(DISTANCE);
                 float fade = 1f - (float) k / (TRAIL_POINTS + 1);
                 float width = size * 0.45f * (0.25f + 0.75f * fade), alpha = dark * glow * 0.8f * fade * fade;
-                if (prev != null) { ribbon(b, m, prev, p, prevWidth, width, prevAlpha, alpha); any = true; }
+                if (prev != null) ribbon(b, m, prev, p, prevWidth, width, prevAlpha, alpha);
                 prev = p; prevWidth = width; prevAlpha = alpha;
             }
             point(b, m, OrbitMath.direction(now), size, dark * glow);
-            any = true;
         }
-        if (any) BufferUploader.drawWithShader(b.buildOrThrow());
+        // a frame can add no vertex at all (a fireball's first instant is fully transparent); build() is null then, buildOrThrow() would crash
+        var mesh = b.build();
+        if (mesh != null) BufferUploader.drawWithShader(mesh);
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
         RenderSystem.depthMask(true);
@@ -102,7 +102,6 @@ public final class NightSky {
         RenderSystem.setShaderColor(1, 1, 1, 1);
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        boolean any = false;
         for (Satellite s : ClientSatellites.get()) {
             if (!s.burning(tick)) continue;
             var head = OrbitMath.lookFromBlock(s, tick, camX, camZ);
@@ -117,7 +116,6 @@ public final class NightSky {
             Vector3f before = at(OrbitMath.lookFromBlock(s, tick - 2, camX, camZ));
             Vector3f side = p.cross(new Vector3f(p).sub(before), new Vector3f());
             if (side.lengthSquared() > 1e-8f) side.normalize();
-            any = true;
             trail(b, m, s, tick, camX, camZ, new Vector3f(), size, light, 60);
             glow(b, m, p, size * 3.6f, 255, 120, 40, light * 0.35f);
             glow(b, m, p, size * 1.7f, 255, 200, 90, light * 0.75f);
@@ -136,7 +134,9 @@ public final class NightSky {
                 }
             }
         }
-        if (any) BufferUploader.drawWithShader(b.buildOrThrow());
+        // a frame can add no vertex at all (a fireball's first instant is fully transparent); build() is null then, buildOrThrow() would crash
+        var mesh = b.build();
+        if (mesh != null) BufferUploader.drawWithShader(mesh);
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
         RenderSystem.depthMask(true);

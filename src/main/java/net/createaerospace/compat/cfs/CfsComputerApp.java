@@ -40,6 +40,8 @@ final class CfsComputerApp implements ComputerCanvas.Application {
         /** The Earth on the map, turned by this many steps of 45 degrees. */
         int rot;
         UUID selected;
+        /** The guarded button that was pressed once and waits for its second press, and when. */
+        ConsoleButton armed;
         long guardOpenedAt = Long.MIN_VALUE / 2;
     }
 
@@ -68,6 +70,7 @@ final class CfsComputerApp implements ComputerCanvas.Application {
         Satellite s = SatelliteControl.pick(SatelliteData.get(c.level().getServer()).list(), desk.selected);
         if (s != null) data.putUUID("Sel", s.id());
         data.putLong("CoverUntil", Math.max(0, desk.guardOpenedAt + GroundConsoleBlockEntity.GUARD_TICKS));
+        if (desk.armed != null) data.putString("Armed", desk.armed.label());
         return new ComputerCanvas.Frame(ComputerCanvas.Presentation.WINDOWED, data);
     }
 
@@ -100,11 +103,14 @@ final class CfsComputerApp implements ComputerCanvas.Application {
                     player.displayClientMessage(Component.translatable(SatelliteReadout.K + "denied"), true);
                     return;
                 }
-                // reentry and abandoning ask once more: the first click opens the cover, a second within its time does it
-                if (press.button().guarded() && now - desk.guardOpenedAt >= GroundConsoleBlockEntity.GUARD_TICKS) {
+                // reentry and abandoning ask once more: the first click arms that button, a second click on the same button within
+                // its time does it (a click on the other one only arms the other one)
+                if (press.button().guarded() && (press.button() != desk.armed || now - desk.guardOpenedAt >= GroundConsoleBlockEntity.GUARD_TICKS)) {
+                    desk.armed = press.button();
                     desk.guardOpenedAt = now;
                     return;
                 }
+                desk.armed = null;
                 desk.guardOpenedAt = Long.MIN_VALUE / 2;
                 SatelliteControl.apply(c.level().getServer(), s, press.button(), press.up(), now, c.boardPos());
             }
