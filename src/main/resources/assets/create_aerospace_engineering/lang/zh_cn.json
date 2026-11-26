@@ -68,5 +68,8 @@
   "message.create_aerospace_engineering.rocket_ready": "%s 已立在发射台上：已装载 %s / %s kg。",
   "message.create_aerospace_engineering.no_rocket": "请先在发射台上立起火箭。",
   "message.create_aerospace_engineering.too_heavy": "太重了：再加 %s kg 会超过 %s / %s kg。",
-  "message.create_aerospace_engineering.payload_loaded": "已装载 %s：%s / %s kg。"
+  "message.create_aerospace_engineering.payload_loaded": "已装载 %s：%s / %s kg。",
+  "item.create_aerospace_engineering.h3_30s": "H3火箭（H3-30S）",
+  "item.create_aerospace_engineering.h3_22s": "H3火箭（H3-22S）",
+  "item.create_aerospace_engineering.h3_24w": "H3火箭（H3-24W）"
 }

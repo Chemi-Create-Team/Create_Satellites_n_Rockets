@@ -11,7 +11,7 @@ CAE（旧名 Create: Satellites 'n' Rockets）は、ロケットを発射台か�
 | ID・版 | `gradle.properties` と `CreateAerospace.MOD_ID`。mod ID `create_aerospace_engineering`、Java `net.createaerospace` |
 | 表示名 | `mod_name`（`gradle.properties`）と `itemGroup.create_aerospace_engineering`（`lang/*.json`）、READMEの題名。現行は「Create: Aerospace Engineering」 |
 | 依存 | NeoForge 21.1.228+（Minecraft 1.21.1）、Create 6.0.10+。RnRは任意。版の基準は `gradle.properties` |
-| 登録 | `CreateAerospace`（`DeferredRegister`）。ブロック2種（発射台・地上管制コンソール）、アイテム2種（人工衛星・ロケット）、エンティティ1種（ロケット）、ブロックエンティティ2種、Display Link用の表示ソース1つ、クリエイティブタブ1つ |
+| 登録 | `CreateAerospace`（`DeferredRegister`）。ブロック2種（発射台・地上管制コンソール）、アイテム5種（人工衛星・ロケット・H3の3形態）、エンティティ1種（ロケット）、ブロックエンティティ2種、Display Link用の表示ソース1つ、クリエイティブタブ1つ |
 | API | `api/AerospaceApi`（ペイロード）、`api/RocketApi`（ロケットの種類）、`api/client/RocketRenderers`（ロケットの描画）、`docs/api.md`、`dist/`（外部MOD向けのAPI JARとハッシュ） |
 | リソース | `assets/` と `data/` は手書き。生成スクリプトは無く、直接編集してよい |
 | 検証 | ローカルのみ（CIなし）。[文書と検証](#文書と検証) |
@@ -40,6 +40,7 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 - 地球は24000 tickで1回転する。軌道周期はゲーム用の縮尺（低軌道2分、静止軌道24000 tick）で、ケプラーの式ではない。1度 = 1000ブロック、経度は東が+x、緯度は北が-z（`OrbitMath`）。
 - 打ち上げた衛星は静止軌道（通信衛星）で、発射経度の赤道上に止まる。高度ダイヤルを下げ、傾斜ダイヤルを上げると空を横切る。高度・傾斜の変更は位置を保つ（`Satellite.retuned`）。
 - ロケットは普通のエンティティ（`RocketEntity`）1種で、種類（`RocketApi` に登録したID、同期する）ごとに数値・大きさ・描画が変わる。ロケットのアイテムを発射台に使って立て、ペイロードを最大積載量（重さの合計）まで積み、積んだ数だけ衛星を放出する。発射台に立っている間は静止し、発射台のブロックが消えたらロケットのアイテムと積荷を落とす。上昇は物理を使わず（`noPhysics`）、種類ごとの高さで放出して消える。CAEのロケット（`RocketApi.STANDARD`、1000 kg・4000 mB・200ブロック・10×60）も同じAPIで `CreateAerospace` から登録し、特別扱いしない。不明な種類（MODを外した）はCAEのロケットの数値とモデルで動かす。
+- H3ロケット（`rocket/H3`、描画 `client/H3Renderer`）は実在の機体の再現（ユーザー指定）。比率は実機どおりで縮尺1/2（`H3.SCALE`）、寸法は実機のメートルで書く。形態は実際に飛んだ30S・22S・24W。最大積載量・燃料・加速・色・分離の段取りの根拠は `H3` のコメントと `docs/launch.md` に書き、実機の数値が変わったら（公表値の更新など）両方を直す。H3もロケットAPIで登録し、特別扱いしない。
 - 発射台は流体タンク8000 mB（`RocketApi.MAX_FUEL_MB`）、1回の発射でロケットの種類ごとの量。タグ `rocket_fuel` の流体だけ入る。RnRの流体はデータ（タグ）で足し、RnRのクラスを直接参照しない（RnRは任意）。発射はレッドストーンの立ち上がり（新しい信号）だけ。
 - 地上管制コンソールはRnRの原子炉制御盤と同じ作り。ボタンは天面にあり、クリック位置を操作者の座標系（`GroundConsoleBlock.uv`）で当てる。座標は `ConsoleButton`、向きは `FACING`（操作者の側を向く）、ダイヤルは左半分で下げ右半分で上げる。見た目の動く部分は `GroundConsoleRenderer`、状態はブロックエンティティの更新タグで同期する。
 - 衛星の変更は所有者かOP（`Satellite.controlledBy`）だけ。閲覧は誰でもできる。軌道離脱はカバー（`GUARD_TICKS`）を開けた後の2回目のクリック。

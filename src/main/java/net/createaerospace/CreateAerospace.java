@@ -70,6 +70,9 @@ public class CreateAerospace {
     public static final DeferredItem<SatelliteItem> SATELLITE = ITEMS.registerItem("satellite", SatelliteItem::new, new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<Item> ROCKET_ITEM = ITEMS.registerSimpleItem("rocket", new Item.Properties().stacksTo(4));
+    /** In the order of {@code rocket.H3.Variant}. */
+    public static final java.util.List<DeferredItem<Item>> H3_ITEMS = java.util.Arrays.stream(net.createaerospace.rocket.H3.Variant.values())
+            .map(v -> ITEMS.registerSimpleItem(v.path, new Item.Properties().stacksTo(1))).toList();
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
             BLOCK_ENTITIES.register("launch_pad", () -> BlockEntityType.Builder.of(LaunchPadBlockEntity::new, LAUNCH_PAD.get()).build(null));
@@ -108,6 +111,7 @@ public class CreateAerospace {
                 {
             net.createaerospace.api.RocketApi.registerRocket(net.createaerospace.api.RocketApi.STANDARD, ROCKET_ITEM.get(),
                     new net.createaerospace.api.RocketApi.RocketType(Component.translatable("item." + MOD_ID + ".rocket"), 1000, 4000, 200, 0.03, 2.5, STANDARD_ROCKET_WIDTH, STANDARD_ROCKET_HEIGHT));
+            net.createaerospace.rocket.H3.register(H3_ITEMS);
             DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get());
             net.createaerospace.compat.cfs.CfsCompat.register();
         }));

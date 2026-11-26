@@ -143,6 +143,23 @@ public class RocketGameTests {
         });
     }
 
+    @GameTest(template = "test_empty", batch = "rocket_h3", timeoutTicks = 100)
+    public static void anH3_24WStandsAtHalfScaleAndLiftsThirteenSatellites(GameTestHelper h) {
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
+        use(h, p, new ItemStack(CreateAerospace.H3_ITEMS.get(2).get()));
+        h.assertTrue(rockets(h).size() == 1, "the H3-24W stands on the pad");
+        RocketEntity r = rockets(h).get(0);
+        h.assertTrue(r.typeId().equals(net.createaerospace.rocket.H3.Variant.H3_24W.id()), "as an H3-24W");
+        h.assertTrue(Math.abs(r.getBbHeight() - 31.5f) < 1e-3 && Math.abs(r.getBbWidth() - 5.2f) < 1e-3, "63 m by 10.4 m at half scale, got " + r.getBbWidth() + " x " + r.getBbHeight());
+        ItemStack sats = new ItemStack(CreateAerospace.SATELLITE.get(), 16);
+        for (int i = 0; i < 16; i++) use(h, p, sats);
+        h.assertTrue(r.payloadCount() == 13 && r.loadedKg() == 6500, "6.5 t to GTO is 13 satellites, got " + r.payloadCount());
+        h.assertTrue(net.createaerospace.rocket.H3.climbed(0.034, net.createaerospace.rocket.H3.tickAt(0.034, 1)) >= net.createaerospace.rocket.H3.CLIMB,
+                "the separation timing reaches the top of the climb");
+        h.succeed();
+    }
+
     @GameTest(template = "test_empty", batch = "rocket_mass", timeoutTicks = 100)
     public static void aRocketTakesPayloadsUpToItsMassLimitAndCanBeTakenDown(GameTestHelper h) {
         Player p = h.makeMockPlayer(GameType.SURVIVAL);

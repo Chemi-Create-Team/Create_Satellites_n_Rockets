@@ -22,6 +22,11 @@ Everything happens in the normal world. There is no trip to space.
 
 ![Standard 60 m rocket on the launch pad](docs/images/rocket-60m.jpg)
 
+Besides CAE's own rocket there is the **H3** (JAXA / Mitsubishi Heavy Industries) at half scale in its three flown
+configurations: **H3-30S** (3 LE-9, no boosters, 4000 kg), **H3-22S** (2 SRB-3, 4800 kg) and **H3-24W** (4 SRB-3, wide fairing,
+6500 kg, 31.5 blocks tall). Its launch shows the steam cloud, the SRB-3 flame and white trail, the nearly clear hydrogen flame of
+the LE-9 with shock diamonds, and the SRB-3 and fairing separations. See [docs/launch.md](docs/launch.md) (Japanese).
+
 The satellite is released into **geostationary orbit** over the equator at the launch longitude, like a communications
 satellite: it hangs over one spot of the world and never moves. Step it down with the altitude dial and tilt it with the
 inclination dial to have it cross the sky instead.

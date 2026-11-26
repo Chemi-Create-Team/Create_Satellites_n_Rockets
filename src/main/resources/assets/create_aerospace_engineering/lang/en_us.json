@@ -68,5 +68,8 @@
   "message.create_aerospace_engineering.rocket_ready": "%s stands on the pad: %s / %s kg loaded.",
   "message.create_aerospace_engineering.no_rocket": "Stand a rocket on the pad first.",
   "message.create_aerospace_engineering.too_heavy": "Too heavy: %s kg more on %s / %s kg.",
-  "message.create_aerospace_engineering.payload_loaded": "%s loaded: %s / %s kg."
+  "message.create_aerospace_engineering.payload_loaded": "%s loaded: %s / %s kg.",
+  "item.create_aerospace_engineering.h3_30s": "H3 Rocket (H3-30S)",
+  "item.create_aerospace_engineering.h3_22s": "H3 Rocket (H3-22S)",
+  "item.create_aerospace_engineering.h3_24w": "H3 Rocket (H3-24W)"
 }

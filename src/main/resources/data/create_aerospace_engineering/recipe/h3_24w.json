@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " B ",
+    "GHG",
+    "S S"
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "G": {
+      "item": "minecraft:gunpowder"
+    },
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "H": {
+      "item": "create_aerospace_engineering:h3_22s"
+    }
+  },
+  "result": {
+    "id": "create_aerospace_engineering:h3_24w",
+    "count": 1
+  }
+}

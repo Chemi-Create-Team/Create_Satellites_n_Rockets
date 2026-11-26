@@ -68,5 +68,8 @@
   "message.create_aerospace_engineering.rocket_ready": "%s を発射台に立てた: %s / %s kg 積載",
   "message.create_aerospace_engineering.no_rocket": "先に発射台へロケットを立てる",
   "message.create_aerospace_engineering.too_heavy": "重すぎる: %s kg 追加で %s / %s kg を超える",
-  "message.create_aerospace_engineering.payload_loaded": "%s を積んだ: %s / %s kg"
+  "message.create_aerospace_engineering.payload_loaded": "%s を積んだ: %s / %s kg",
+  "item.create_aerospace_engineering.h3_30s": "H3ロケット（H3-30S）",
+  "item.create_aerospace_engineering.h3_22s": "H3ロケット（H3-22S）",
+  "item.create_aerospace_engineering.h3_24w": "H3ロケット（H3-24W）"
 }

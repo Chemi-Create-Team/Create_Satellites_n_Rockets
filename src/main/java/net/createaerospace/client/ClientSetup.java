@@ -15,7 +15,10 @@ public final class ClientSetup {
             e.registerEntityRenderer(CreateAerospace.ROCKET.get(), RocketRenderer::new);
             e.registerBlockEntityRenderer(CreateAerospace.GROUND_CONSOLE_BE.get(), GroundConsoleRenderer::new);
         });
-        bus.addListener(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent.class, e -> e.enqueueWork(net.createaerospace.compat.cfs.CfsCompat::registerClient));
+        bus.addListener(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent.class, e -> e.enqueueWork(() -> {
+            net.createaerospace.compat.cfs.CfsCompat.registerClient();
+            H3Renderer.registerAll();
+        }));
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent.class, ClientSetup::tooltip);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, e -> {
             if (e.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) NightSky.render(e);

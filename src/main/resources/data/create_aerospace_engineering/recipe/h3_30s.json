@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SPS",
+    "TRT",
+    "SBS"
+  ],
+  "key": {
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "P": {
+      "item": "create:precision_mechanism"
+    },
+    "T": {
+      "item": "create:fluid_tank"
+    },
+    "R": {
+      "item": "create_aerospace_engineering:rocket"
+    },
+    "B": {
+      "item": "create:blaze_burner"
+    }
+  },
+  "result": {
+    "id": "create_aerospace_engineering:h3_30s",
+    "count": 1
+  }
+}
