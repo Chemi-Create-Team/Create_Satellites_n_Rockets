@@ -118,5 +118,6 @@
   "message.create_aerospace_engineering.gantry_target": "%s を整備中: %s%%",
   "console.create_aerospace_engineering.alert.landing_failure": "! 着陸失敗 %s (%s) X %s Z %s",
   "tooltip.create_aerospace_engineering.flights": "飛行回数: %s",
-  "tooltip.create_aerospace_engineering.needs_service": "要整備"
+  "tooltip.create_aerospace_engineering.needs_service": "要整備",
+  "message.create_aerospace_engineering.escaped": "%s は地球の軌道を離れ、ほかの天体へ向かいました。"
 }

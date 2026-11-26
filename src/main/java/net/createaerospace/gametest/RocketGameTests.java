@@ -432,6 +432,7 @@ public class RocketGameTests {
 
     private static final net.minecraft.resources.ResourceLocation TEST_PAYLOAD = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("cae_test", "beacon");
     private static final java.util.List<java.util.UUID> REMOVED = new java.util.ArrayList<>();
+    private static final java.util.List<String> ESCAPED = new java.util.ArrayList<>();
 
     /** A compass stands in for the satellite item of another mod. Registered once per test server. */
     private static synchronized void registerTestPayload() {
@@ -459,6 +460,14 @@ public class RocketGameTests {
             public void removed(net.minecraft.server.MinecraftServer server, net.createaerospace.api.AerospaceApi.SatelliteInfo satellite) {
                 REMOVED.add(satellite.id());
             }
+
+            /** A compass named "Probe..." flies on to another world. */
+            @Override
+            public boolean escape(net.minecraft.server.level.ServerLevel level, ItemStack stack, java.util.UUID owner, String ownerName, String name) {
+                if (!name.startsWith("Probe")) return false;
+                ESCAPED.add(name + ":" + owner);
+                return true;
+            }
         });
     }
 
@@ -479,7 +488,7 @@ public class RocketGameTests {
                     @Override
                     public void deployed(net.minecraft.server.level.ServerLevel level, net.minecraft.world.entity.Entity rocket,
                                          java.util.List<net.createaerospace.api.AerospaceApi.SatelliteInfo> satellites) {
-                        HOOKS.add("deployed:" + satellites.get(0).name());
+                        HOOKS.add("deployed:" + (satellites.isEmpty() ? "-" : satellites.get(0).name()));
                     }
                 });
     }
@@ -523,6 +532,31 @@ public class RocketGameTests {
             SatelliteData.get(server).remove(server, s.id());
             h.assertTrue(REMOVED.contains(s.id()), "the payload heard that its satellite left orbit");
             h.assertTrue(SatelliteData.get(server).data(s.id()).isEmpty(), "its data went with it");
+        });
+    }
+
+    @GameTest(template = "test_empty", batch = "rocket_escape", timeoutTicks = 400)
+    public static void aProbeLeavesEarthOrbitInsteadOfBecomingASatellite(GameTestHelper h) {
+        registerTestPayload();
+        registerTestRocket();
+        noRandomFailures(h);
+        HOOKS.clear();
+        ESCAPED.clear();
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
+        use(h, p, new ItemStack(net.minecraft.world.item.Items.SPYGLASS));
+        ItemStack probe = new ItemStack(net.minecraft.world.item.Items.COMPASS);
+        probe.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Probe-1"));
+        use(h, p, probe);
+        var tank = ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank;
+        tank.fill(new FluidStack(Fluids.LAVA, 4000), IFluidHandler.FluidAction.EXECUTE);
+        h.setBlock(PAD.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        h.succeedWhen(() -> {
+            h.assertTrue(rockets(h).isEmpty(), "the rocket released its payload");
+            h.assertTrue(ESCAPED.equals(java.util.List.of("Probe-1:" + p.getUUID())), "escape() was asked with the name and the loader: " + ESCAPED);
+            h.assertTrue(net.createaerospace.api.AerospaceApi.satellites(h.getLevel().getServer(), TEST_PAYLOAD).stream().noneMatch(s -> s.name().equals("Probe-1")),
+                    "no satellite was put up for it");
+            h.assertTrue(HOOKS.equals(java.util.List.of("launched:1", "deployed:-")), "the rocket's deployed hook saw no satellite: " + HOOKS);
         });
     }
 

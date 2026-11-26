@@ -298,6 +298,10 @@ public class RocketEntity extends Entity {
             Loader loader = loader(i);
             var custom = stack.get(DataComponents.CUSTOM_NAME);
             String name = custom == null ? String.format("SAT-%04X", random.nextInt(0x10000)) : custom.getString();
+            if (AerospaceApi.escape(level, stack, loader.id(), loader.name(), name)) {
+                if (server.getPlayerList().getPlayer(loader.id()) instanceof ServerPlayer p) p.sendSystemMessage(Component.translatable("message.create_aerospace_engineering.escaped", name));
+                continue;
+            }
             var kind = AerospaceApi.payloadOf(stack);
             Satellite s = Satellite.deployed(UUID.randomUUID(), name, loader.id(), loader.name(), OrbitMath.lonOf(getX()), now,
                     kind == null || kind.equals(AerospaceApi.STANDARD) ? "" : kind.toString());

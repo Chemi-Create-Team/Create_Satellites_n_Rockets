@@ -29,7 +29,7 @@ import net.minecraft.world.item.ItemStack;
  * {@code ModList.get().isLoaded("create_aerospace_engineering")}. See {@code docs/api.md}.
  */
 public final class AerospaceApi {
-    public static final int API_VERSION = 6;
+    public static final int API_VERSION = 7;
     /** The mass of CAE's own satellite, and of a payload that does not say. */
     public static final int DEFAULT_MASS_KG = 500;
     /** The largest payload data kept on one satellite, in bytes of NBT. */
@@ -64,6 +64,15 @@ public final class AerospaceApi {
 
         /** The satellite has left orbit: burnt up after a reentry, or removed by a command. Its data is still readable. */
         default void removed(MinecraftServer server, SatelliteInfo satellite) {}
+
+        /**
+         * The rocket has released this payload; return true if it leaves Earth orbit on its own, such as a probe to another
+         * planet. CAE then puts no satellite up and does not call {@link #deploy}; the payload's mod keeps track of it from here.
+         * {@code name} is the anvil name or a generated one. API 7.
+         */
+        default boolean escape(ServerLevel level, ItemStack stack, UUID owner, String ownerName, String name) {
+            return false;
+        }
     }
 
     /**
@@ -206,6 +215,19 @@ public final class AerospaceApi {
             p.removed(server, info(s, SatelliteData.get(server), server.overworld().getGameTime()));
         } catch (RuntimeException e) {
             CreateAerospace.LOGGER.error("Payload {} failed while satellite {} left orbit", s.payload(), s.name(), e);
+        }
+    }
+
+    /** CAE only: whether the payload of this stack left Earth orbit by itself. A failing mod counts as not escaping. */
+    public static boolean escape(ServerLevel level, ItemStack stack, UUID owner, String ownerName, String name) {
+        ResourceLocation kind = payloadOf(stack);
+        Payload p = kind == null ? null : payload(kind);
+        if (p == null) return false;
+        try {
+            return p.escape(level, stack.copy(), owner, ownerName, name);
+        } catch (RuntimeException e) {
+            CreateAerospace.LOGGER.error("Payload {} failed to escape with {}", kind, name, e);
+            return false;
         }
     }
 

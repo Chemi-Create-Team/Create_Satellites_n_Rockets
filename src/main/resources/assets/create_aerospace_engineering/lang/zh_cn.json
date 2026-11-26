@@ -118,5 +118,6 @@
   "message.create_aerospace_engineering.gantry_target": "正在维护 %s：%s%%",
   "console.create_aerospace_engineering.alert.landing_failure": "! 着陆失败 %s (%s) X %s Z %s",
   "tooltip.create_aerospace_engineering.flights": "飞行次数：%s",
-  "tooltip.create_aerospace_engineering.needs_service": "需要维护"
+  "tooltip.create_aerospace_engineering.needs_service": "需要维护",
+  "message.create_aerospace_engineering.escaped": "%s 已离开地球轨道，飞往其他天体。"
 }

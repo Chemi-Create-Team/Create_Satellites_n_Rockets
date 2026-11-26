@@ -23,6 +23,7 @@ GPSや通信の中継のような機能は、登録したMODが衛星の位置�
    | 2 | 0.1.7 | 重さ（`massKg`）、ロケットAPI |
    | 3 | 0.1.8 | ロケットの大きさ 幅10・高さ60まで |
    | 4 | 0.1.10 | ロケットの大きさ 幅16・高さ100まで |
+   | 7 | 0.1.21 | `Payload.escape`（地球の軌道を離れて別の天体へ向かうペイロード） |
    | 6 | 0.1.17 | `Recovery`（第1段の帰還）、`flights`・`needsService`・`withService`、`Context.returning`・`returnTicks`、`Renderer.returnExhaust` |
    | 5 | 0.1.11 | `failureChance`、`Hooks.failed`、`state`（0.1.15のJARも同じAPI。登録のロックを1つにまとめ、`visibleFrom` を速くした） |
 
@@ -103,6 +104,7 @@ final class ExampleCaeCompat {
 - `state(server, uuid)`（API 5）は `ACTIVE`（運用中）・`ABANDONED`（放棄されたデブリ）・`REENTERING`（再突入中、まもなく `removed`）を返します。GPSや中継のように衛星の働きを使う機能は、`ACTIVE` だけを数えてください。`satellites` と `visibleFrom` は3つとも返します。再突入中の高度と位置は落ちていく今の値です。再突入が始まるとモードは0（待機）になるので、`state` のないAPI 1〜4のMODも、モード0を外せば再突入中の衛星を数えません。
 - 登録したMODを外したワールドでも衛星は残ります。表示上の積荷名が消え、`payload` のIDは残るので、MODを戻せば続きから使えます。
 - `massKg` はクライアントでもツールチップのために呼ばれます。スタックだけから決め、ワールドを見ないでください。
+- `escape(level, stack, owner, ownerName, name)`（API 7）は、ロケットがペイロードを放出したときに最初に呼ばれます。true を返すと、そのペイロードは地球の軌道に残らず別の天体へ向かったものとして扱われ、CAEは衛星を作らず、`deploy` も呼びません（地上管制コンソールにも出ません）。その後の追跡は登録したMODが行います。積んだプレイヤーには「地球の軌道を離れた」と通知します。ロケットの `Hooks.deployed` の一覧にも入りません。`name` は金床の名前か、なければ `SAT-xxxx` です。既定は false（ふつうの衛星）。例外が出たときは false として衛星にします。CFSの惑星探査機がこれを使っています。
 - `deploy` と `removed` で例外が出ても、CAEは記録して続けます（衛星は失われません）。
 
 座標の対応は1度＝1000ブロック、xが経度（東がプラス）、-zが緯度（北がマイナスz）です。地球はMinecraftの1日で1回転します。

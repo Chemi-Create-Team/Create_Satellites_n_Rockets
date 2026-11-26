@@ -118,5 +118,6 @@
   "message.create_aerospace_engineering.gantry_target": "servicing %s: %s%%",
   "console.create_aerospace_engineering.alert.landing_failure": "! LANDING FAILURE %s (%s) at X %s Z %s",
   "tooltip.create_aerospace_engineering.flights": "Flights: %s",
-  "tooltip.create_aerospace_engineering.needs_service": "Needs service"
+  "tooltip.create_aerospace_engineering.needs_service": "Needs service",
+  "message.create_aerospace_engineering.escaped": "%s left Earth orbit on its way to another world."
 }

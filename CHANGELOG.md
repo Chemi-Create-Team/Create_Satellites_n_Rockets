@@ -2,6 +2,10 @@
 
 各版で変わったことです。機能ごとの詳しい仕様は[仕様の案内](docs/README.md)を参照してください。
 
+## 0.1.21
+
+- 外部MOD向けAPI：地球の軌道に残らず別の天体へ向かうペイロードを作れるように `Payload.escape` を足しました（`API_VERSION` 7）。放出時に true を返したペイロードは衛星にならず、積んだプレイヤーに「地球の軌道を離れた」と通知します。Create: Frontier Scienceの惑星探査機（Create: Cosmonauticsの天体へ送るもの）が使います。[0.1.21のAPI JAR](dist/create-aerospace-engineering-api-0.1.21.jar)。[外部MOD向けAPI](docs/api.md)
+
 ## 0.1.20
 
 - **Frontier Science 0.3.38以降では、共通制御コンピュータの「人工衛星」アプリのマップで、衛星の点をクリックして選べるようにしました。** CFSに新しく足したアプリAPI v3（キャンバスの大きさ）を使い、描画と同じ計算でクリックした点を選びます。[マップタブ](docs/control-computer.md#マップタブ)
