@@ -44,6 +44,15 @@ public final class CfsCanvasRenderer {
         String hover = c.pointerX() < 0 ? null : CfsLayout.hit(view, c.pointerX(), c.pointerY());
 
         g.fill(0, 0, w, h, -.002f, BACKDROP);
+        if (c.data().contains("NoAntenna")) {
+            Rect panel = new Rect(.06f, .30f, .94f, .70f);
+            box(g, w, h, panel, -.003f, PANEL, 0xFFFF4040);
+            text(g, w, h, Component.translatable(K + "antenna." + c.data().getString("NoAntenna")), panel.l() + .03f, panel.t() + .06f,
+                    panel.r() - panel.l() - .06f, .06f, 0, AMBER);
+            text(g, w, h, Component.translatable(K + "antenna.hint"), panel.l() + .03f, panel.t() + .20f,
+                    panel.r() - panel.l() - .06f, .045f, 0, DIM);
+            return;
+        }
         tab(g, w, h, CfsLayout.TAB_CONTROL_RECT, Component.translatable(K + "tab.control"), view == View.CONTROL, CfsLayout.TAB_CONTROL.equals(hover));
         tab(g, w, h, CfsLayout.TAB_MAP_RECT, Component.translatable(K + "tab.map"), view == View.MAP, CfsLayout.TAB_MAP.equals(hover));
         var alert = SatelliteReadout.activeAlert(ClientSatellites.alerts(), c.gameTime() + c.partialTick());

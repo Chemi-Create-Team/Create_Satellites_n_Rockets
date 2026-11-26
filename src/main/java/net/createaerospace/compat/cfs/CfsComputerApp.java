@@ -41,6 +41,8 @@ final class CfsComputerApp implements ComputerCanvas.Application {
 
     /** The running CFS has API v3: canvas size and saved state. API_VERSION is a compile-time constant, so it is read at run time. */
     static final boolean V3 = apiVersion() >= 3;
+    /** The running CFS has API v4 (CFS 0.3.42): the computer reaches satellites only through a dish linked to it. */
+    static final boolean V4 = apiVersion() >= 4;
 
     private static int apiVersion() {
         try {
@@ -125,6 +127,12 @@ final class CfsComputerApp implements ComputerCanvas.Application {
     public ComputerCanvas.Frame canvas(ComputerCanvas.Context c) {
         Desk desk = desk(c);
         CompoundTag data = new CompoundTag();
+        String antenna = antennaMissing(c);
+        if (antenna != null) {
+            // every satellite stays connected from its launch on, but the computer needs a large or ultra-large dish to talk to them
+            data.putString("NoAntenna", antenna);
+            return new ComputerCanvas.Frame(ComputerCanvas.Presentation.WINDOWED, data);
+        }
         data.putInt("View", desk.view.ordinal());
         data.putInt("Rot", desk.rot);
         Satellite s = SatelliteControl.pick(SatelliteData.get(c.level().getServer()).list(), desk.selected);
@@ -137,6 +145,7 @@ final class CfsComputerApp implements ComputerCanvas.Application {
     @Override
     public void click(ComputerCanvas.Context c, ServerPlayer player, ComputerCanvas.Frame displayed, double x, double y) {
         // the buttons are found in the view the player was looking at
+        if (antennaMissing(c) != null) return;
         View shown = View.of(displayed.data().getInt("View"));
         String hit = CfsLayout.hit(shown, x, y);
         Desk desk = desk(c);
@@ -168,6 +177,13 @@ final class CfsComputerApp implements ComputerCanvas.Application {
         if (s == null) return;
         desk.selected = s.id();
         keep(c, desk);
+    }
+
+    /** Why the computer cannot reach the satellites ("none" or "unpowered"), or null when it can or the CFS is older than API v4. */
+    private static String antennaMissing(ComputerCanvas.Context c) {
+        if (!V4) return null;
+        var antenna = ComputerApps.antenna(c.level(), c.computerPos());
+        return antenna.orbit() ? null : antenna == ComputerApps.Antenna.UNPOWERED ? "unpowered" : "none";
     }
 
     private static void press(ComputerCanvas.Context c, ServerPlayer player, Desk desk, SatelliteControl.Press press) {

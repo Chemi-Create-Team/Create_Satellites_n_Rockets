@@ -2,6 +2,11 @@
 
 各版で変わったことです。機能ごとの詳しい仕様は[仕様の案内](docs/README.md)を参照してください。
 
+## 0.1.22
+
+- **Frontier Science 0.3.42以降では、共通制御コンピュータの「人工衛星」アプリにパラボラアンテナが必要になりました。** 大型衛星パラボラアンテナかCFSの超大型パラボラアンテナを、ディスプレイリンクでコンピュータにつなぎます（情報源「パラボラアンテナ」）。衛星は打ち上げた時点から一覧に入ります。アンテナがない間や停電中は、接続を求める画面だけを出します。CFSの惑星探査機は、CFSの別のアプリで操作します。[開き方](docs/control-computer.md#開き方)
+- CFSの公開API（0.3.42のAPI JAR、アプリAPI v4）を使います。CAEのAPIは変わりません（`API_VERSION` 7のまま）。
+
 ## 0.1.21
 
 - 外部MOD向けAPI：地球の軌道に残らず別の天体へ向かうペイロードを作れるように `Payload.escape` を足しました（`API_VERSION` 7）。放出時に true を返したペイロードは衛星にならず、積んだプレイヤーに「地球の軌道を離れた」と通知します。Create: Frontier Scienceの惑星探査機（Create: Cosmonauticsの天体へ送るもの）が使います。[0.1.21のAPI JAR](dist/create-aerospace-engineering-api-0.1.21.jar)。[外部MOD向けAPI](docs/api.md)
