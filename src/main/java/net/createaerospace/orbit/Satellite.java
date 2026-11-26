@@ -96,9 +96,12 @@ public record Satellite(UUID id, String name, UUID owner, String ownerName, int 
         return new Satellite(id, name, owner, ownerName, tier, incl, raan, phase0, epoch, STANDBY, payload, true, decayAt, targetX, targetZ);
     }
 
-    /** Leaves its orbit at {@code now} and burns up over the block (x, z). */
+    /**
+     * Leaves its orbit at {@code now} and burns up over the block (x, z). Its lamp goes off (standby), so a GPS or a relay that only
+     * counts working satellites stops counting it at once, also one that reads only the mode (API 1 to 4).
+     */
     public Satellite reenter(long now, int targetX, int targetZ) {
-        return new Satellite(id, name, owner, ownerName, tier, incl, raan, phase0, epoch, mode, payload, abandoned, now, targetX, targetZ);
+        return new Satellite(id, name, owner, ownerName, tier, incl, raan, phase0, epoch, STANDBY, payload, abandoned, now, targetX, targetZ);
     }
 
     public boolean reentering(double tick) {

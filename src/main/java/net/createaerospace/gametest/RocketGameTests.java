@@ -92,6 +92,33 @@ public class RocketGameTests {
         });
     }
 
+    /** Each satellite belongs to whoever loaded it; only whoever stood the rocket up may take it down. */
+    @GameTest(template = "test_empty", batch = "rocket_shared", timeoutTicks = 400)
+    public static void everyLoaderOwnsTheirOwnSatelliteAndOnlyThePlacerTakesTheRocketDown(GameTestHelper h) {
+        Player placer = h.makeMockPlayer(GameType.SURVIVAL), friend = h.makeMockPlayer(GameType.SURVIVAL);
+        noRandomFailures(h);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get());
+        use(h, placer, new ItemStack(CreateAerospace.ROCKET_ITEM.get()));
+        use(h, placer, new ItemStack(CreateAerospace.SATELLITE.get()));
+        use(h, friend, new ItemStack(CreateAerospace.SATELLITE.get()));
+        h.assertTrue(rockets(h).size() == 1 && rockets(h).get(0).payloadCount() == 2, "both satellites are on the rocket");
+        friend.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        friend.setShiftKeyDown(true);
+        BlockPos abs = h.absolutePos(PAD);
+        h.getLevel().getBlockState(abs).useWithoutItem(h.getLevel(), friend, new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
+        h.assertTrue(rockets(h).size() == 1 && friend.getInventory().countItem(CreateAerospace.SATELLITE.get()) == 0,
+                "somebody else cannot take the rocket down with the placer's payload");
+        ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank.fill(new FluidStack(Fluids.LAVA, 4000), IFluidHandler.FluidAction.EXECUTE);
+        h.setBlock(PAD.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        h.succeedWhen(() -> {
+            h.assertTrue(rockets(h).isEmpty(), "the rocket has released its satellites");
+            h.assertTrue(mine(h, placer) == 1 && mine(h, friend) == 1, "one satellite each, got " + mine(h, placer) + " and " + mine(h, friend));
+            var data = SatelliteData.get(h.getLevel().getServer());
+            data.list().stream().filter(s -> s.owner().equals(placer.getUUID()) || s.owner().equals(friend.getUUID()))
+                    .forEach(s -> data.remove(h.getLevel().getServer(), s.id()));
+        });
+    }
+
     @GameTest(template = "test_empty", batch = "rocket_dry", timeoutTicks = 100)
     public static void aPadWithoutFuelDoesNotLaunch(GameTestHelper h) {
         Player p = h.makeMockPlayer(GameType.SURVIVAL);
@@ -257,6 +284,7 @@ public class RocketGameTests {
         long now = h.getLevel().getGameTime();
         Satellite down = data.find(a.id());
         h.assertTrue(down.reentering(now) && !c.guardOpen(), "the second press starts the reentry and closes the cover");
+        h.assertTrue(down.mode() == Satellite.STANDBY, "its lamp goes off, so services stop counting it");
         BlockPos at = h.absolutePos(CONSOLE);
         h.assertTrue(down.targetX() == at.getX() && down.targetZ() == at.getZ(), "it comes down over the console");
         c.press(owner, ConsoleButton.MODE, true);

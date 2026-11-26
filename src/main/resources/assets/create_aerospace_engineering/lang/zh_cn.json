@@ -101,5 +101,8 @@
   "photo.create_aerospace_engineering.overview": "全景",
   "photo.create_aerospace_engineering.viewport": "视野宽度 %1$s 方块 · 每像素 %2$s 方块",
   "photo.create_aerospace_engineering.controls": "滚动缩放，拖动平移，深蓝处无地表数据",
-  "photo.create_aerospace_engineering.loading": "正在接收卫星图像…"
+  "photo.create_aerospace_engineering.loading": "正在接收卫星图像…",
+  "message.create_aerospace_engineering.not_your_rocket": "只有竖起这枚火箭的玩家（或管理员）才能把它取下。",
+  "photo.create_aerospace_engineering.disabled": "本服务器已关闭卫星照片（游戏规则 caeSatellitePhotos）。",
+  "photo.create_aerospace_engineering.denied": "只有卫星的所有者（或管理员）才能用它拍照。"
 }

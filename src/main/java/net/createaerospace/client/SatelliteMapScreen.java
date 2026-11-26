@@ -134,7 +134,11 @@ public class SatelliteMapScreen extends Screen {
         }
         fit(g, Component.translatable("screen.create_aerospace_engineering.legend"), areaX, ty + 11, areaW, DIM, true);
 
-        photo.active = !RelayStorage.retired(sel) && RelayStorage.isRelay(sel);
+        // lit only when the server would take the photo: a working relay of this player, beaconing, above the console's horizon
+        var me = minecraft.player;
+        photo.active = !RelayStorage.retired(sel) && RelayStorage.isRelay(sel) && sel.mode() != Satellite.STANDBY && me != null
+                && sel.controlledBy(me.getUUID(), me.hasPermissions(2))
+                && OrbitMath.lookFromBlock(sel, tick, console.getX() + .5, console.getZ() + .5).elevation() > 0;
         photo.render(g, mx, my, pt);
         if (!sides) return;
         // left: every satellite, the selected one lit

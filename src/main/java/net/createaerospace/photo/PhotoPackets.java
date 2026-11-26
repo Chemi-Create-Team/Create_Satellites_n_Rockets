@@ -20,7 +20,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -57,10 +56,19 @@ public final class PhotoPackets {
     private static void open(ServerPlayer player, Request request) {
         var console = console(player, request.console);
         if (console == null) return;
+        if (!player.serverLevel().getGameRules().getBoolean(CreateAerospace.SATELLITE_PHOTOS)) {
+            player.displayClientMessage(Component.translatable(KEY + "disabled"), false);
+            return;
+        }
         var satellite = console.selected();
         if (satellite == null || !satellite.id().equals(request.satellite)
                 || RelayStorage.signal(player.serverLevel(), satellite, request.console) == null) {
             player.displayClientMessage(Component.translatable(KEY + "unavailable"), false);
+            return;
+        }
+        // the camera is the satellite owner's (or an operator's), like every other command to a satellite
+        if (!satellite.controlledBy(player.getUUID(), player.hasPermissions(2))) {
+            player.displayClientMessage(Component.translatable(KEY + "denied"), false);
             return;
         }
         var survey = SURVEYS.computeIfAbsent(player.server, s -> new Survey());
@@ -74,9 +82,9 @@ public final class PhotoPackets {
         if (old != null) survey.cancel(old);
         var path = player.server.getWorldPath(LevelResource.ROOT).resolve("region");
         var photo = new Photo(request.console, satellite.name(), UUID.randomUUID());
-        var index = CompletableFuture.supplyAsync(() -> PhotoRegionIndex.read(path, request.console), Util.ioPool())
+        var index = CompletableFuture.supplyAsync(() -> PhotoRegionIndex.read(path, request.console), SavedChunkReader.THREAD)
                 .exceptionally(error -> new PhotoRegionIndex());
-        survey.sessions.put(player.getUUID(), new Session(photo, index));
+        survey.sessions.put(player.getUUID(), new Session(photo, index, path));
         PacketDistributor.sendToPlayer(player, photo);
     }
 
@@ -135,10 +143,12 @@ public final class PhotoPackets {
     private static final class Session {
         final Photo photo;
         final CompletableFuture<PhotoRegionIndex> index;
+        final java.nio.file.Path regions;
 
-        Session(Photo photo, CompletableFuture<PhotoRegionIndex> index) {
+        Session(Photo photo, CompletableFuture<PhotoRegionIndex> index, java.nio.file.Path regions) {
             this.photo = photo;
             this.index = index;
+            this.regions = regions;
         }
     }
 
@@ -195,8 +205,17 @@ public final class PhotoPackets {
                 } else if (index.has(x, z)) {
                     if (reads.size() >= MAX_READS_PER_JOB) break;
                     int min = level.getMinBuildHeight(), height = level.getHeight();
-                    var read = chunks.chunkMap.read(new ChunkPos(x, z)).thenAcceptAsync(
-                            snapshot -> snapshot.ifPresent(nbt -> raster.sampleSaved(x, z, nbt, min, height)), Util.backgroundExecutor());
+                    var regions = session.regions;
+                    var target = raster;
+                    // on the photo reader's own thread, not through the server's chunk IO (see SavedChunkReader)
+                    var read = CompletableFuture.runAsync(() -> {
+                        try {
+                            var nbt = SavedChunkReader.read(regions, x, z);
+                            if (nbt != null) target.sampleSaved(x, z, nbt, min, height);
+                        } catch (java.io.IOException | RuntimeException e) {
+                            // an unreadable chunk stays dark blue like one that was never generated
+                        }
+                    }, SavedChunkReader.THREAD);
                     reads.add(read);
                     sampled++;
                 }

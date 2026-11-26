@@ -101,5 +101,8 @@
   "photo.create_aerospace_engineering.overview": "Overview",
   "photo.create_aerospace_engineering.viewport": "View: %1$s blocks wide · %2$s blocks per pixel",
   "photo.create_aerospace_engineering.controls": "Scroll to zoom · drag to move · dark blue: no terrain data",
-  "photo.create_aerospace_engineering.loading": "Receiving photo tiles…"
+  "photo.create_aerospace_engineering.loading": "Receiving photo tiles…",
+  "message.create_aerospace_engineering.not_your_rocket": "Only the player who stood this rocket up (or an operator) can take it down.",
+  "photo.create_aerospace_engineering.disabled": "Satellite photos are turned off on this server (game rule caeSatellitePhotos).",
+  "photo.create_aerospace_engineering.denied": "Only the owner of the satellite (or an operator) can take photos with it."
 }

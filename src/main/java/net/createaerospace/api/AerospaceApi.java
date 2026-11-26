@@ -37,6 +37,8 @@ public final class AerospaceApi {
     /** The payload type of a plain CAE satellite. */
     public static final ResourceLocation STANDARD = ResourceLocation.fromNamespaceAndPath("create_aerospace_engineering", "satellite");
 
+    /** One lock for the payloads and the rocket types, which check each other, so that two registrations can never wait on each other. */
+    static final Object LOCK = new Object();
     private static final Map<ResourceLocation, Payload> PAYLOADS = new HashMap<>();
     private static final Map<Item, ResourceLocation> ITEMS = new HashMap<>();
 
@@ -74,22 +76,26 @@ public final class AerospaceApi {
                                 int blockX, int blockZ) {}
 
     /** Call during common setup (both sides, so clients can name the payload), with an id in your own namespace. */
-    public static synchronized void registerPayload(ResourceLocation id, Item item, Payload payload) {
+    public static void registerPayload(ResourceLocation id, Item item, Payload payload) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(item);
         Objects.requireNonNull(payload);
-        if (id.equals(STANDARD) || id.toString().length() > 128 || PAYLOADS.containsKey(id) || ITEMS.containsKey(item)
-                || item == CreateAerospace.SATELLITE.get() || RocketApi.rocketOf(new ItemStack(item)) != null) {
-            throw new IllegalArgumentException("Invalid or duplicate CAE payload: " + id + " / " + BuiltInRegistries.ITEM.getKey(item));
+        synchronized (LOCK) {
+            if (id.equals(STANDARD) || id.toString().length() > 128 || PAYLOADS.containsKey(id) || ITEMS.containsKey(item)
+                    || item == CreateAerospace.SATELLITE.get() || RocketApi.rocketOf(new ItemStack(item)) != null) {
+                throw new IllegalArgumentException("Invalid or duplicate CAE payload: " + id + " / " + BuiltInRegistries.ITEM.getKey(item));
+            }
+            PAYLOADS.put(id, payload);
+            ITEMS.put(item, id);
         }
-        PAYLOADS.put(id, payload);
-        ITEMS.put(item, id);
     }
 
     /** The payload type an item launches as, or null when it is not a payload. CAE's own satellite item gives {@link #STANDARD}. */
-    public static synchronized ResourceLocation payloadOf(ItemStack stack) {
+    public static ResourceLocation payloadOf(ItemStack stack) {
         if (stack.is(CreateAerospace.SATELLITE.get())) return STANDARD;
-        return ITEMS.get(stack.getItem());
+        synchronized (LOCK) {
+            return ITEMS.get(stack.getItem());
+        }
     }
 
     /** What one item weighs as a payload, at least 1 kg; 0 when it is not a payload. */
@@ -105,8 +111,10 @@ public final class AerospaceApi {
         }
     }
 
-    public static synchronized Payload payload(ResourceLocation id) {
-        return PAYLOADS.get(id);
+    public static Payload payload(ResourceLocation id) {
+        synchronized (LOCK) {
+            return PAYLOADS.get(id);
+        }
     }
 
     /** The name of a payload type for a display; the plain satellite and an unknown type (its mod was removed) have none. */
@@ -168,9 +176,13 @@ public final class AerospaceApi {
 
     /** The satellites above the horizon of a block, highest first. */
     public static List<SatelliteInfo> visibleFrom(MinecraftServer server, BlockPos from) {
-        return satellites(server).stream().filter(s -> elevation(server, s.id(), from).orElse(-90.0) > 0)
-                .sorted((a, b) -> Double.compare(elevation(server, b.id(), from).orElse(-90.0), elevation(server, a.id(), from).orElse(-90.0)))
-                .toList();
+        SatelliteData data = SatelliteData.get(server);
+        long now = server.overworld().getGameTime();
+        record Seen(SatelliteInfo info, double elevation) {}
+        // each elevation once, not again in every comparison of the sort
+        return data.list().stream()
+                .map(s -> new Seen(info(s, data, now), Math.toDegrees(OrbitMath.lookFromBlock(s, now, from.getX() + .5, from.getZ() + .5).elevation())))
+                .filter(s -> s.elevation() > 0).sorted((a, b) -> Double.compare(b.elevation(), a.elevation())).map(Seen::info).toList();
     }
 
     /** The payload type of a satellite as an id; a plain one, or one launched before its type existed, is {@link #STANDARD}. */

@@ -23,7 +23,8 @@ Minecraft **1.21.1**, NeoForge, Java **21**. The required and optional mods are 
 
 - **Launch pad and rockets**. Fill the pad with up to 8000 mB of fuel (lava, `#c:fuel`, `#c:diesel`, and naphtha, methanol,
   low-sulfur diesel and hydrogen from Refinery 'n' Reactors), stand a rocket on it, load satellites and fire it with redstone.
-  Payloads have a mass and rockets a maximum payload: the standard rocket (60 m, 1000 kg) carries two 500 kg satellites.
+  Payloads have a mass and rockets a maximum payload: the standard rocket (60 m, 1000 kg) carries two 500 kg satellites. When several players load one rocket, each owns the
+  satellite they loaded.
   [Launching](docs/launch.md)
 - **H3 rockets**. The JAXA / Mitsubishi Heavy Industries H3 at full size (1 block = 1 m) in its three flown configurations, 30S,
   22S and 24W, with the steam cloud, the SRB-3 flame and trail, the hydrogen flame of the LE-9 and the SRB-3 and fairing
@@ -40,7 +41,8 @@ Minecraft **1.21.1**, NeoForge, Java **21**. The required and optional mods are 
   and then (3%) a launch fails. [Reentry](docs/orbit.md#放棄と再突入) · [Launch failures](docs/launch.md#打ち上げの失敗)
 - **Satellite relay and photos**. Launch a communications satellite and point a Large Satellite Dish at each base to it: the
   satellite's 27-slot shared inventory carries items between distant bases (an AE2 ME storage bus or a hopper moves them in and
-  out). From the console map you can photograph 4,096 × 4,096 blocks of real terrain around the console. The dish moved here from
+  out). From the console map the satellite's owner can photograph 4,096 × 4,096 blocks of real terrain around the console (the game rule
+  `caeSatellitePhotos` turns photos off). The dish moved here from
   Frontier Science and keeps its old registry ID. [Relay and photos](docs/satellite-relay.md)
 - **The night sky**. Every satellite above your horizon is a moving dot, seen from where you stand; a geostationary one stays in
   one place. [The sky](docs/orbit.md#夜空)

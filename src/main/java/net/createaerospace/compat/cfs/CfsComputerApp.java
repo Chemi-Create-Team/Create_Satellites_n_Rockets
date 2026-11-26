@@ -43,9 +43,15 @@ final class CfsComputerApp implements ComputerCanvas.Application {
         /** The guarded button that was pressed once and waits for its second press, and when. */
         ConsoleButton armed;
         long guardOpenedAt = Long.MIN_VALUE / 2;
+        /** The last game tick the computer showed or used the app; a desk left alone for {@link #FORGET_TICKS} is forgotten. */
+        long seen;
     }
 
+    /** A Minecraft day. A computer that was taken down or never opened again does not stay in memory for good. */
+    private static final long FORGET_TICKS = 24000;
+
     private final Map<Key, Desk> desks = new HashMap<>();
+    private long pruned;
 
     static void register() {
         ComputerApps.register(CreateAerospace.id("ground_control"), new CfsComputerApp());
@@ -57,7 +63,14 @@ final class CfsComputerApp implements ComputerCanvas.Application {
     }
 
     private Desk desk(ComputerCanvas.Context c) {
-        return desks.computeIfAbsent(new Key(c.level().dimension(), c.computerPos().immutable()), k -> new Desk());
+        long now = c.level().getGameTime();
+        if (now - pruned >= 1200 || now < pruned) {
+            pruned = now;
+            desks.values().removeIf(d -> now - d.seen > FORGET_TICKS);
+        }
+        Desk desk = desks.computeIfAbsent(new Key(c.level().dimension(), c.computerPos().immutable()), k -> new Desk());
+        desk.seen = now;
+        return desk;
     }
 
     /** Only what changes when somebody presses something; the satellites and the time are the client's own. */

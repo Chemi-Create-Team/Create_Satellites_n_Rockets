@@ -82,15 +82,17 @@ public final class RocketApi {
     public record Registered(ResourceLocation id, Item item, RocketType type, Hooks hooks) {}
 
     /** Call during common setup (both sides: the client sizes the entity and shows the numbers), with an id in your own namespace. */
-    public static synchronized void registerRocket(ResourceLocation id, Item item, RocketType type, Hooks hooks) {
+    public static void registerRocket(ResourceLocation id, Item item, RocketType type, Hooks hooks) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(item);
         Objects.requireNonNull(type);
-        if (id.toString().length() > 128 || TYPES.containsKey(id) || ITEMS.containsKey(item) || AerospaceApi.payloadOf(new ItemStack(item)) != null) {
-            throw new IllegalArgumentException("Invalid or duplicate CAE rocket: " + id + " / " + BuiltInRegistries.ITEM.getKey(item));
+        synchronized (AerospaceApi.LOCK) {
+            if (id.toString().length() > 128 || TYPES.containsKey(id) || ITEMS.containsKey(item) || AerospaceApi.payloadOf(new ItemStack(item)) != null) {
+                throw new IllegalArgumentException("Invalid or duplicate CAE rocket: " + id + " / " + BuiltInRegistries.ITEM.getKey(item));
+            }
+            TYPES.put(id, new Registered(id, item, type, hooks == null ? new Hooks() {} : hooks));
+            ITEMS.put(item, id);
         }
-        TYPES.put(id, new Registered(id, item, type, hooks == null ? new Hooks() {} : hooks));
-        ITEMS.put(item, id);
     }
 
     public static void registerRocket(ResourceLocation id, Item item, RocketType type) {
@@ -98,13 +100,19 @@ public final class RocketApi {
     }
 
     /** The rocket type an item stands up, or null. */
-    public static synchronized ResourceLocation rocketOf(ItemStack stack) {
-        return stack.isEmpty() ? null : ITEMS.get(stack.getItem());
+    public static ResourceLocation rocketOf(ItemStack stack) {
+        if (stack.isEmpty()) return null;
+        synchronized (AerospaceApi.LOCK) {
+            return ITEMS.get(stack.getItem());
+        }
     }
 
     /** A registered type, or null (its mod is gone). */
-    public static synchronized Registered rocket(ResourceLocation id) {
-        return id == null ? null : TYPES.get(id);
+    public static Registered rocket(ResourceLocation id) {
+        if (id == null) return null;
+        synchronized (AerospaceApi.LOCK) {
+            return TYPES.get(id);
+        }
     }
 
     /** A registered type, or CAE's own when it is unknown, so that a rocket of a removed mod still flies and drops its payloads. */

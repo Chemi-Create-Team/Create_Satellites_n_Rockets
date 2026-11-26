@@ -40,7 +40,7 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 - 衛星の位置は保存しない。円軌道の要素（高度段・傾斜段・昇交点・位相・基準tick・モード）だけを `SatelliteData`（オーバーワールドのSavedData）に持ち、位置は `OrbitMath` がゲーム時間（`getGameTime`、昼夜に依存しない）から閉じた式で求める。サーバーもクライアントも同じ式を使う。
 - 地球は24000 tickで1回転する。軌道周期はゲーム用の縮尺（低軌道2分、静止軌道24000 tick）で、ケプラーの式ではない。1度 = 1000ブロック、経度は東が+x、緯度は北が-z（`OrbitMath`）。
 - 打ち上げた衛星は静止軌道（通信衛星）で、発射経度の赤道上に止まる。高度ダイヤルを下げ、傾斜ダイヤルを上げると空を横切る。高度・傾斜の変更は位置を保つ（`Satellite.retuned`）。
-- ロケットは普通のエンティティ（`RocketEntity`）1種で、種類（`RocketApi` に登録したID、同期する）ごとに数値・大きさ・描画が変わる。ロケットのアイテムを発射台に使って立て、ペイロードを最大積載量（重さの合計）まで積み、積んだ数だけ衛星を放出する。発射台に立っている間は静止し、発射台のブロックが消えたらロケットのアイテムと積荷を落とす。上昇は物理を使わず（`noPhysics`）、種類ごとの高さで放出して消える。CAEのロケット（`RocketApi.STANDARD`、1000 kg・4000 mB・200ブロック・10×60）も同じAPIで `CreateAerospace` から登録し、特別扱いしない。不明な種類（MODを外した）はCAEのロケットの数値とモデルで動かす。
+- ロケットは普通のエンティティ（`RocketEntity`）1種で、種類（`RocketApi` に登録したID、同期する）ごとに数値・大きさ・描画が変わる。ロケットのアイテムを発射台に使って立て、ペイロードを最大積載量（重さの合計）まで積み、積んだ数だけ衛星を放出する。衛星の持ち主はそのペイロードを積んだプレイヤー（`RocketEntity` が積んだ人をペイロードごとに保存する）。ロケットを降ろせるのは立てたプレイヤーかOPだけ。発射台に立っている間は静止し、発射台のブロックが消えたらロケットのアイテムと積荷を落とす。上昇は物理を使わず（`noPhysics`）、種類ごとの高さで放出して消える。CAEのロケット（`RocketApi.STANDARD`、1000 kg・4000 mB・200ブロック・10×60）も同じAPIで `CreateAerospace` から登録し、特別扱いしない。不明な種類（MODを外した）はCAEのロケットの数値とモデルで動かす。
 - H3ロケット（`rocket/H3`、描画 `client/H3Renderer`）は実在の機体の再現（ユーザー指定）。実寸大（`H3.SCALE` = 1、ユーザー指定）、寸法は実機のメートルで書く。形態は実際に飛んだ30S・22S・24W。最大積載量・燃料・加速・色・分離の段取りの根拠は `H3` のコメントと `docs/launch.md` に書き、実機の数値が変わったら（公表値の更新など）両方を直す。H3もロケットAPIで登録し、特別扱いしない。
 - 発射台は流体タンク8000 mB（`RocketApi.MAX_FUEL_MB`）、1回の発射でロケットの種類ごとの量。タグ `rocket_fuel` の流体だけ入る。RnRの流体はデータ（タグ）で足し、RnRのクラスを直接参照しない（RnRは任意）。発射はレッドストーンの立ち上がり（新しい信号）だけ。
 - 地上管制コンソールはRnRの原子炉制御盤と同じ作り。ボタンは天面にあり、クリック位置を操作者の座標系（`GroundConsoleBlock.uv`）で当てる。座標は `ConsoleButton`、向きは `FACING`（操作者の側を向く）、ダイヤルは左半分で下げ右半分で上げる。見た目の動く部分は `GroundConsoleRenderer`、状態はブロックエンティティの更新タグで同期する。
@@ -49,12 +49,15 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 - 打ち上げの失敗は `RocketType.failureChance`（既定3%）を発射時に引き、ゲームルール `caeLaunchFailures` で止められる。警告は `Alert`（`SatelliteData` に直近8件を保存し、`SatellitesPayload` で同期）で、コンソール・マップ画面・CFSアプリが `SatelliteReadout.activeAlert`・`alertLine` から同じ文を出す。ゲームテストでランダムな失敗に頼らない（`noRandomFailures`、`RocketEntity.setFailAt`）。
 - 衛星の一覧は `SatellitesPayload` でログイン時と変更時に全プレイヤーへ送る。名前の長さは `Satellite.MAX_NAME` で切る（パケット上限を超えるとプレイヤーが切断されるため）。
 - 衛星マップ画面（`SatelliteMapScreen`）は管制室風の3列（左に衛星一覧、中央に立体の地球、右に選択中の読み取り）。**地球は立方体でできた球（`client/globe/VoxelGlobe`、半径28個、陸地は海より1個高く、極は白）で、衛星は小さなボクセルの機体として軌道半径（縮尺は無視。静止軌道で1.75倍）の位置に描く**。世界は平面の経度緯度の地図だが、それを世界地図として描かない（ユーザー指定）。`VoxelGlobe` はMinecraftの型を使わず、四角形を `Sink` へ渡すだけにして、画面（`GuiGraphics`）とCFSのキャンバスと単体の確認プログラムで共用する。陸地は `textures/gui/land_mask.png`（Natural Earth 1:50m、パブリックドメイン、512×256の白黒）から起動後に1回だけ作る。画面はドラッグで地球を回す。右の読み取りは `SatelliteReadout` を使い、コンソール・CFSアプリと同じ値にする。琥珀・緑・青の配色は画面とCFSアプリでそろえ、モードの色は `SatelliteReadout.MODE_COLORS` に置く。
-- 夜空は `RenderLevelStageEvent` の `AFTER_SKY` で素のテッセレータを使う（`client/NightSky`）。シェーダーパックが空を置き換える場合の非対応は既知の制限。
+- 夜空は `RenderLevelStageEvent` の `AFTER_SKY` で素のテッセレータを使う（`client/NightSky`）。描画するものが無いフレームもあるので、`buildOrThrow` ではなく `build` で確定して null を飛ばす。シェーダーパックが空を置き換える場合の非対応は既知の制限。
 - Mixinを使わず、Createの公開APIを使う。単純化で上限を作る箇所には `ponytail:` コメントで上限と拡張方法を書く。
 - 地上管制コンソールは、CFS（Create: Frontier Science）0.3.32以降があるときだけ、共通制御コンピュータの「追加アプリ」（キャンバスAPI v2）としても使える（`compat/cfs`、描画は `client/CfsCanvasRenderer`）。**任意の連携で、必須依存にしない。** `net.createfrontier.*` を参照してよいのは `CfsComputerApp`（サーバー）と `CfsCanvasRenderer`（クライアント）だけで、`CfsCompat` が `ModList` と `ComputerCanvas`・`ComputerCanvasRenderers` クラスの有無を確かめてから呼ぶ。`libs/` のAPI JAR（`compileOnly`）はCFSの `dist/` の公式のものをそのまま使い、版を上げるときはハッシュを `build.gradle` のコメントに書く。CFS本体は変更しない。
 - コンピュータのアプリは「制御」と「マップ」（立体の地球）の2画面。マップには地球を45度ずつ回すボタンがあり、向きは `Rot` としてフレームに入れる。ボタンとタブの位置は `CfsLayout`（正規化座標）だけに書き、描画（クライアント）とクリックの判定（サーバー）が同じものを使う。フレームに入れるのは表示画面・選択衛星・カバーの期限だけで、衛星と時刻はクライアントが自分の写し（`ClientSatellites`、`gameTime`）から描く（時刻で変わる値をフレームに入れると毎回同期される）。
 - **コンソールの機能を変えたら、コンピュータのアプリも同じ変更で直す。** 表示は `SatelliteReadout`（コンソールの画面・マップ画面・アプリの共通）、操作は `SatelliteControl`（コンソールのブロックとアプリの共通）に書く。コンソールにボタンや表示項目を足したときは、`SatelliteControl.appButtons()` の対象か、アプリに出せない理由を決め、`CfsLayout`・`CfsCanvasRenderer`・`computer.*` の翻訳（3言語）・両方のREADMEを更新する（レイアウトの整合は `OrbitGameTests` が検査する）。
 - **外部MODの衛星はペイロードAPI（`api/AerospaceApi`）で受ける。** ペイロードは重さ（`Payload.massKg`）を持ち、登録アイテムを1個ずつデータごとロケットに載せる。**外部MODのロケットはロケットAPI（`api/RocketApi`、描画は `api/client/RocketRenderers`）で受ける**（ユーザー指定）。数値は `RocketType` の作成時に範囲を検査し、見た目は外部MODが自由に描けるようにする（描画しない種類はCAEのモデル）。APIの型はMinecraftとJavaのものだけにし、CFSなど外部MODへの依存を持たない。外部MODは `dist/create-aerospace-engineering-api-<版>.jar` を `compileOnly` で使うので、API（`net.createaerospace.api`）を変えた版では `./gradlew apiJar` でJARを作り、`dist/SHA256SUMS` と `docs/api.md` を同じコミットで更新する。公開済みのメソッドを消したり意味を変えたりせず、足すときは `API_VERSION` を上げる。衛星の種類は `Satellite.payload`（IDの文字列、空は通常の衛星）、データは `SatelliteData` にサーバー専用で保存し、衛星と一緒に消す。外部MODのコールバック（ペイロード・ロケットのフック・描画）の例外で衛星やロケットを失わない。
+
+- 衛星写真（`photo/`）は通信衛星の持ち主かOPだけが撮り、ゲームルール `caeSatellitePhotos` で止められる。保存済みのチャンクは `SavedChunkReader` の専用スレッド（1本、低優先度）がリージョンファイルを読み取り専用で直接読み、サーバーのチャンク入出力（`ChunkMap`・`IOWorker`）を使わない（プレイヤーのチャンク読み込みを待たせないため）。
+- APIの登録表（ペイロードとロケット）は `AerospaceApi.LOCK` の1つのロックで守る（2つのクラスが互いを確かめるため、別々のロックだと登録どうしが待ち合う）。
 
 ## 文書と検証
 

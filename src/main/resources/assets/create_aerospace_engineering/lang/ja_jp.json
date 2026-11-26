@@ -101,5 +101,8 @@
   "photo.create_aerospace_engineering.overview": "全景",
   "photo.create_aerospace_engineering.viewport": "表示幅 %1$s ブロック · 1画素あたり %2$s ブロック",
   "photo.create_aerospace_engineering.controls": "スクロールで拡大・縮小、ドラッグで移動、濃紺は地表データなし",
-  "photo.create_aerospace_engineering.loading": "衛星写真を読み込み中…"
+  "photo.create_aerospace_engineering.loading": "衛星写真を読み込み中…",
+  "message.create_aerospace_engineering.not_your_rocket": "このロケットを降ろせるのは、立てたプレイヤーかOPだけ",
+  "photo.create_aerospace_engineering.disabled": "このサーバーでは衛星写真が無効になっている（ゲームルール caeSatellitePhotos）",
+  "photo.create_aerospace_engineering.denied": "衛星写真を撮れるのは、その衛星の持ち主かOPだけ"
 }

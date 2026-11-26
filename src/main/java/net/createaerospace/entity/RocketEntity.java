@@ -41,11 +41,18 @@ public class RocketEntity extends Entity {
     private static final EntityDataAccessor<ItemStack> ITEM = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.ITEM_STACK);
     private static final EntityDataAccessor<Integer> LOADED_KG = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> PAYLOADS = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.INT);
+    /** The game tick of lift-off, so that a client that sees the rocket only mid-flight still knows how far into the ascent it is. */
+    private static final EntityDataAccessor<Long> LAUNCHED_AT = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.LONG);
 
+    /** Who stood the rocket up: may take it down, hears about a failure, and owns payloads loaded before 0.1.15. */
     private UUID owner = new UUID(0, 0);
     private String ownerName = "";
     /** Each one item, with all its components (the name, and whatever the mod of a payload put on it), in loading order. */
     private final List<ItemStack> payloads = new ArrayList<>();
+    /** Who loaded each payload, in the same order: each satellite belongs to whoever loaded it. */
+    private final List<Loader> loaders = new ArrayList<>();
+
+    private record Loader(UUID id, String name) {}
     private int ascent;
     private double startY = Double.NaN;
     /** The ascent tick at which this flight fails; 0 for a good flight. Decided at lift-off. */
@@ -59,6 +66,11 @@ public class RocketEntity extends Entity {
     public void setOwner(Player p) {
         owner = p.getUUID();
         ownerName = p.getGameProfile().getName();
+    }
+
+    /** Whether a player may take the rocket down with everything on it: whoever stood it up, or an operator. */
+    public boolean ownedBy(Player p) {
+        return p.getUUID().equals(owner) || p.hasPermissions(2);
     }
 
     /** Make this a rocket of the type {@code stack} stands up; the stack itself is kept and given back when the rocket is taken down. */
@@ -93,13 +105,18 @@ public class RocketEntity extends Entity {
         return ascent;
     }
 
-    /** Load one payload if it fits under the mass limit. */
-    public boolean addPayload(ItemStack stack) {
+    /** Load one payload if it fits under the mass limit; its satellite will belong to {@code loader}. */
+    public boolean addPayload(ItemStack stack, Player loader) {
         int kg = AerospaceApi.massKg(stack);
         if (kg <= 0 || isAscending() || loadedKg() + kg > type().type().maxPayloadKg()) return false;
         payloads.add(stack.copyWithCount(1));
+        loaders.add(new Loader(loader.getUUID(), loader.getGameProfile().getName()));
         syncLoad();
         return true;
+    }
+
+    private Loader loader(int i) {
+        return i < loaders.size() ? loaders.get(i) : new Loader(owner, ownerName);
     }
 
     public List<ItemStack> payloads() {
@@ -124,6 +141,7 @@ public class RocketEntity extends Entity {
 
     public void launch() {
         entityData.set(ASCENDING, true);
+        entityData.set(LAUNCHED_AT, level().getGameTime());
         startY = getY();
         var rocketType = type().type();
         if (failAt == 0 && level().getGameRules().getBoolean(CreateAerospace.LAUNCH_FAILURES) && random.nextDouble() < rocketType.failureChance()) {
@@ -146,6 +164,7 @@ public class RocketEntity extends Entity {
         builder.define(ITEM, ItemStack.EMPTY);
         builder.define(LOADED_KG, 0);
         builder.define(PAYLOADS, 0);
+        builder.define(LAUNCHED_AT, 0L);
     }
 
     @Override
@@ -181,6 +200,8 @@ public class RocketEntity extends Entity {
             return;
         }
         ascent++;
+        // a client that started watching mid-flight catches up with the server's count
+        if (level().isClientSide && entityData.get(LAUNCHED_AT) > 0) ascent = (int) Math.max(1, level().getGameTime() - entityData.get(LAUNCHED_AT));
         var t = type().type();
         double speed = Math.min(t.topSpeed(), t.acceleration() * ascent);
         double ceiling = level().getMaxBuildHeight() - Math.max(4, getBbHeight());
@@ -222,8 +243,13 @@ public class RocketEntity extends Entity {
         var type = type();
         SatelliteData.get(server).alert(server, new Alert(Alert.LAUNCH_FAILURE, type.id().toString(), ownerName, payloads.size(),
                 (int) Math.floor(x), (int) Math.floor(z), server.overworld().getGameTime()));
-        if (server.getPlayerList().getPlayer(owner) instanceof ServerPlayer p)
-            p.sendSystemMessage(Component.translatable("message.create_aerospace_engineering.launch_failed", type.type().name(), payloads.size()));
+        // the one who stood it up and everyone who had a payload on it
+        var told = new java.util.HashSet<UUID>();
+        told.add(owner);
+        for (int i = 0; i < payloads.size(); i++) told.add(loader(i).id());
+        for (UUID id : told)
+            if (server.getPlayerList().getPlayer(id) instanceof ServerPlayer p)
+                p.sendSystemMessage(Component.translatable("message.create_aerospace_engineering.launch_failed", type.type().name(), payloads.size()));
         try {
             type.hooks().failed(level, this, payloads());
         } catch (RuntimeException e) {
@@ -236,17 +262,18 @@ public class RocketEntity extends Entity {
         var level = (ServerLevel) level();
         var server = level.getServer();
         long now = server.overworld().getGameTime();
-        var player = server.getPlayerList().getPlayer(owner);
         List<AerospaceApi.SatelliteInfo> deployed = new ArrayList<>();
-        for (ItemStack stack : payloads) {
+        for (int i = 0; i < payloads.size(); i++) {
+            ItemStack stack = payloads.get(i);
+            Loader loader = loader(i);
             var custom = stack.get(DataComponents.CUSTOM_NAME);
             String name = custom == null ? String.format("SAT-%04X", random.nextInt(0x10000)) : custom.getString();
             var kind = AerospaceApi.payloadOf(stack);
-            Satellite s = Satellite.deployed(UUID.randomUUID(), name, owner, ownerName, OrbitMath.lonOf(getX()), now,
+            Satellite s = Satellite.deployed(UUID.randomUUID(), name, loader.id(), loader.name(), OrbitMath.lonOf(getX()), now,
                     kind == null || kind.equals(AerospaceApi.STANDARD) ? "" : kind.toString());
             AerospaceApi.deploy(level, stack, s);
             AerospaceApi.satellite(server, s.id()).ifPresent(deployed::add);
-            if (player instanceof ServerPlayer p) p.sendSystemMessage(Component.translatable("message.create_aerospace_engineering.deployed", name));
+            if (server.getPlayerList().getPlayer(loader.id()) instanceof ServerPlayer p) p.sendSystemMessage(Component.translatable("message.create_aerospace_engineering.deployed", name));
         }
         level.playSound(null, getX(), getY(), getZ(), SoundEvents.FIREWORK_ROCKET_BLAST_FAR, SoundSource.AMBIENT, 8f, 1f);
         var t = type();
@@ -263,9 +290,16 @@ public class RocketEntity extends Entity {
         if (t.hasUUID("owner")) owner = t.getUUID("owner");
         ownerName = t.getString("ownerName");
         payloads.clear();
-        for (Tag p : t.getList("payloads", Tag.TAG_COMPOUND)) {
-            ItemStack s = ItemStack.parseOptional(registryAccess(), (CompoundTag) p);
-            if (!s.isEmpty()) payloads.add(s);
+        loaders.clear();
+        // loaders before 0.1.15 were not kept: those payloads go to whoever stood the rocket up
+        var who = t.getList("loaders", Tag.TAG_COMPOUND);
+        var all = t.getList("payloads", Tag.TAG_COMPOUND);
+        for (int i = 0; i < all.size(); i++) {
+            ItemStack s = ItemStack.parseOptional(registryAccess(), all.getCompound(i));
+            if (s.isEmpty()) continue;
+            payloads.add(s);
+            CompoundTag l = i < who.size() ? who.getCompound(i) : new CompoundTag();
+            loaders.add(l.hasUUID("id") ? new Loader(l.getUUID("id"), l.getString("name")) : new Loader(owner, ownerName));
         }
         // before 0.1.7 a rocket had one payload and no item of its own; before 0.1.6 it kept only the satellite's name
         if (t.contains("payload")) {
@@ -284,6 +318,7 @@ public class RocketEntity extends Entity {
         ascent = t.getInt("ascent");
         failAt = t.getInt("failAt");
         if (t.contains("startY")) startY = t.getDouble("startY");
+        if (isAscending()) entityData.set(LAUNCHED_AT, Math.max(1, level().getGameTime() - ascent));
     }
 
     @Override
@@ -294,8 +329,16 @@ public class RocketEntity extends Entity {
         t.putString("rocketType", entityData.get(TYPE));
         if (!entityData.get(ITEM).isEmpty()) t.put("rocketItem", entityData.get(ITEM).save(registryAccess()));
         ListTag list = new ListTag();
-        payloads.forEach(p -> list.add(p.save(registryAccess())));
+        ListTag who = new ListTag();
+        for (int i = 0; i < payloads.size(); i++) {
+            list.add(payloads.get(i).save(registryAccess()));
+            CompoundTag l = new CompoundTag();
+            l.putUUID("id", loader(i).id());
+            l.putString("name", loader(i).name());
+            who.add(l);
+        }
         t.put("payloads", list);
+        t.put("loaders", who);
         t.putBoolean("ascending", isAscending());
         t.putInt("ascent", ascent);
         if (failAt != 0) t.putInt("failAt", failAt);

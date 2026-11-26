@@ -110,6 +110,34 @@ public final class RelayGameTests {
         h.succeed();
     }
 
+    /** Photos read saved chunks from the region files themselves; what they read must be what vanilla wrote. */
+    @GameTest(template = "test_empty", batch = "cae_photo")
+    public static void thePhotoReaderReadsWhatVanillaRegionFilesHold(GameTestHelper h) {
+        java.nio.file.Path dir = null;
+        try {
+            dir = java.nio.file.Files.createTempDirectory("cae-photo-region");
+            var chunk = h.getLevel().getChunkAt(h.absolutePos(BlockPos.ZERO));
+            CompoundTag saved = ChunkSerializer.write(h.getLevel(), chunk);
+            var pos = new net.minecraft.world.level.ChunkPos(-33, 70);
+            var info = new net.minecraft.world.level.chunk.storage.RegionStorageInfo("test", net.minecraft.world.level.Level.OVERWORLD, "chunk");
+            try (var region = new net.minecraft.world.level.chunk.storage.RegionFile(info, dir.resolve("r.-2.2.mca"), dir, false);
+                 var out = region.getChunkDataOutputStream(pos)) {
+                net.minecraft.nbt.NbtIo.write(saved, out);
+            }
+            h.assertTrue(saved.equals(net.createaerospace.photo.SavedChunkReader.read(dir, pos.x, pos.z)), "the saved chunk comes back as written");
+            h.assertTrue(net.createaerospace.photo.SavedChunkReader.read(dir, pos.x + 1, pos.z) == null, "a chunk the region does not hold is null");
+            h.assertTrue(net.createaerospace.photo.SavedChunkReader.read(dir, 500, 500) == null, "a missing region file is null");
+        } catch (java.io.IOException e) {
+            throw new AssertionError(e);
+        } finally {
+            if (dir != null) try (var files = java.nio.file.Files.list(dir)) {
+                for (var f : files.toList()) java.nio.file.Files.deleteIfExists(f);
+                java.nio.file.Files.deleteIfExists(dir);
+            } catch (java.io.IOException ignored) {}
+        }
+        h.succeed();
+    }
+
     private static OrbitalDishEntity station(ServerLevel level, BlockPos pos, UUID target) {
         var dish = new OrbitalDishEntity(pos, CreateAerospace.DISH.get().defaultBlockState());
         dish.setLevel(level);

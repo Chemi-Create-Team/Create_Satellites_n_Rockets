@@ -51,6 +51,11 @@ public class CreateAerospace {
             net.minecraft.world.level.GameRules.register("caeLaunchFailures", net.minecraft.world.level.GameRules.Category.MISC,
                     net.minecraft.world.level.GameRules.BooleanValue.create(true));
 
+    /** Whether communications satellites can take photos of the ground from the console map; on by default. */
+    public static final net.minecraft.world.level.GameRules.Key<net.minecraft.world.level.GameRules.BooleanValue> SATELLITE_PHOTOS =
+            net.minecraft.world.level.GameRules.register("caeSatellitePhotos", net.minecraft.world.level.GameRules.Category.MISC,
+                    net.minecraft.world.level.GameRules.BooleanValue.create(true));
+
     public static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
     public static ResourceLocation id(String path) {

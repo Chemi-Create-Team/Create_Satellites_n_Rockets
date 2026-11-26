@@ -110,10 +110,9 @@ public class LaunchPadBlock extends Block implements EntityBlock, IWrenchable {
         }
         if (standing == null) {
             say(player, "no_rocket");
-        } else if (!standing.addPayload(stack)) {
+        } else if (!standing.addPayload(stack, player)) {
             say(player, "too_heavy", AerospaceApi.massKg(stack), standing.loadedKg(), standing.type().type().maxPayloadKg());
         } else {
-            standing.setOwner(player);
             level.playSound(null, pos, SoundEvents.IRON_DOOR_CLOSE, SoundSource.BLOCKS, 1f, 1.2f);
             if (!player.getAbilities().instabuild) stack.shrink(1);
             say(player, "payload_loaded", stack.getHoverName(), standing.loadedKg(), standing.type().type().maxPayloadKg());
@@ -127,7 +126,11 @@ public class LaunchPadBlock extends Block implements EntityBlock, IWrenchable {
         if (level.isClientSide) return InteractionResult.SUCCESS;
         RocketEntity r = standing(level, pos);
         if (r != null && player.isShiftKeyDown()) {
-            // take the rocket down with everything on it
+            // take the rocket down with everything on it; only whoever stood it up (or an operator) may, so nobody walks off with other people's payloads
+            if (!r.ownedBy(player)) {
+                say(player, "not_your_rocket");
+                return InteractionResult.SUCCESS;
+            }
             r.contents().forEach(s -> player.getInventory().placeItemBackInInventory(s));
             r.discard();
             level.playSound(null, pos, SoundEvents.ARMOR_EQUIP_IRON.value(), SoundSource.BLOCKS, 1f, 1f);
