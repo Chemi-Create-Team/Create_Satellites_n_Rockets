@@ -37,10 +37,11 @@ public final class RocketApi {
      * per tick per tick up to {@code topSpeed} blocks per tick, then releases its payloads. {@code width} and {@code height} are the
      * size of the entity in blocks; it stands on the pad, so the space above the pad must be free for it. {@code failureChance} (0 to
      * 1, API 5) is how often a launch fails: the rocket explodes on the way up and its payloads are lost. The game rule
-     * {@code caeLaunchFailures} turns failures off for a world.
+     * {@code caeLaunchFailures} turns failures off for a world. {@code recovery} (API 6, null for an expendable rocket) makes the
+     * first stage fly back to its pad after releasing the payloads.
      */
     public record RocketType(Component name, int maxPayloadKg, int fuelMb, int climbBlocks, double acceleration, double topSpeed,
-                             float width, float height, double failureChance) {
+                             float width, float height, double failureChance, Recovery recovery) {
         /** The chance of a failure when a type does not give one (API 4 and older). */
         public static final double DEFAULT_FAILURE_CHANCE = 0.03;
 
@@ -48,14 +49,22 @@ public final class RocketApi {
             Objects.requireNonNull(name);
             if (maxPayloadKg <= 0 || fuelMb < 0 || fuelMb > MAX_FUEL_MB || climbBlocks < 16 || climbBlocks > 1024
                     || !(acceleration > 0) || !(topSpeed > 0) || topSpeed > 10 || !(width > 0) || width > MAX_WIDTH || !(height > 0) || height > MAX_HEIGHT
-                    || !(failureChance >= 0) || failureChance > 1) {
+                    || !(failureChance >= 0) || failureChance > 1
+                    || recovery != null && (!(recovery.noReturnChance() >= 0) || !(recovery.landingFailureChance() >= 0)
+                        || recovery.noReturnChance() + recovery.landingFailureChance() > 1)) {
                 throw new IllegalArgumentException("Invalid CAE rocket type: " + name.getString());
             }
         }
 
         /** API 4 and older: the default failure chance. */
         public RocketType(Component name, int maxPayloadKg, int fuelMb, int climbBlocks, double acceleration, double topSpeed, float width, float height) {
-            this(name, maxPayloadKg, fuelMb, climbBlocks, acceleration, topSpeed, width, height, DEFAULT_FAILURE_CHANCE);
+            this(name, maxPayloadKg, fuelMb, climbBlocks, acceleration, topSpeed, width, height, DEFAULT_FAILURE_CHANCE, null);
+        }
+
+        /** API 5: expendable. */
+        public RocketType(Component name, int maxPayloadKg, int fuelMb, int climbBlocks, double acceleration, double topSpeed, float width, float height,
+                          double failureChance) {
+            this(name, maxPayloadKg, fuelMb, climbBlocks, acceleration, topSpeed, width, height, failureChance, null);
         }
 
         /** Ticks from lift-off to the release of the payloads, if the build limit does not stop the climb first. */
@@ -65,6 +74,45 @@ public final class RocketApi {
             while (h < climbBlocks) h += Math.min(topSpeed, acceleration * ++t);
             return t;
         }
+    }
+
+    /**
+     * A reusable first stage (API 6). After releasing the payloads it holds at the top of the climb for {@link #HOLD_TICKS} (flip and
+     * boostback), falls back for {@link #FALL_TICKS} and touches down on its pad. Of all flights, {@code noReturnChance} never come
+     * back and {@code landingFailureChance} explode on touchdown; the rest land. A landed stage needs a service (the service gantry)
+     * before it takes payloads again, and fuel in the pad as always. The game rule {@code caeLaunchFailures} off lands every one.
+     */
+    public record Recovery(double noReturnChance, double landingFailureChance) {
+        public static final int HOLD_TICKS = 100, FALL_TICKS = 240;
+
+        /** 0 to 1 through the fall back to the pad, at {@code returnTicks} after the release: smooth, still at both ends. */
+        public static double fall(double returnTicks) {
+            double s = Math.max(0, Math.min(1, (returnTicks - HOLD_TICKS) / FALL_TICKS));
+            return s * s * (3 - 2 * s);
+        }
+    }
+
+    /** How many flights a reusable rocket item has made. */
+    public static int flights(ItemStack rocket) {
+        return rocket.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY)
+                .copyTag().getInt("CaeFlights");
+    }
+
+    /** Whether a landed rocket item must be serviced before it flies again. */
+    public static boolean needsService(ItemStack rocket) {
+        return rocket.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY)
+                .copyTag().getBoolean("CaeNeedsService");
+    }
+
+    /** A copy of the item with its flight count and service flag. */
+    public static ItemStack withService(ItemStack rocket, int flights, boolean needsService) {
+        ItemStack out = rocket.copy();
+        net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, out, t -> {
+            t.putInt("CaeFlights", flights);
+            if (needsService) t.putBoolean("CaeNeedsService", true);
+            else t.remove("CaeNeedsService");
+        });
+        return out;
     }
 
     /** Optional server callbacks. The entity is the CAE rocket; do not discard it or move it. */

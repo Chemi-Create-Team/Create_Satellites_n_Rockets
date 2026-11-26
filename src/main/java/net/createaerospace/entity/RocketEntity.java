@@ -10,6 +10,7 @@ import net.createaerospace.orbit.OrbitMath;
 import net.createaerospace.orbit.Alert;
 import net.createaerospace.orbit.Satellite;
 import net.createaerospace.orbit.SatelliteData;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -43,6 +44,10 @@ public class RocketEntity extends Entity {
     private static final EntityDataAccessor<Integer> PAYLOADS = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.INT);
     /** The game tick of lift-off, so that a client that sees the rocket only mid-flight still knows how far into the ascent it is. */
     private static final EntityDataAccessor<Long> LAUNCHED_AT = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.LONG);
+    /** The game tick a reusable first stage released its payloads and turned back; 0 while it is not coming back. */
+    private static final EntityDataAccessor<Long> RETURNING_SINCE = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.LONG);
+    /** How a recovery ends, decided when the payloads are released. */
+    public static final int LAND = 0, CRASH = 1, LOST = 2;
 
     /** Who stood the rocket up: may take it down, hears about a failure, and owns payloads loaded before 0.1.15. */
     private UUID owner = new UUID(0, 0);
@@ -57,6 +62,11 @@ public class RocketEntity extends Entity {
     private double startY = Double.NaN;
     /** The ascent tick at which this flight fails; 0 for a good flight. Decided at lift-off. */
     private int failAt;
+    private int returnTicks;
+    /** Where the first stage turned back. */
+    private double topY;
+    /** LAND, CRASH or LOST; -1 until decided (a gametest may set it beforehand). */
+    private int recoveryOutcome = -1;
 
     public RocketEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -108,7 +118,7 @@ public class RocketEntity extends Entity {
     /** Load one payload if it fits under the mass limit; its satellite will belong to {@code loader}. */
     public boolean addPayload(ItemStack stack, Player loader) {
         int kg = AerospaceApi.massKg(stack);
-        if (kg <= 0 || isAscending() || loadedKg() + kg > type().type().maxPayloadKg()) return false;
+        if (kg <= 0 || isAscending() || isReturning() || needsService() || loadedKg() + kg > type().type().maxPayloadKg()) return false;
         payloads.add(stack.copyWithCount(1));
         loaders.add(new Loader(loader.getUUID(), loader.getGameProfile().getName()));
         syncLoad();
@@ -139,6 +149,31 @@ public class RocketEntity extends Entity {
         return entityData.get(ASCENDING);
     }
 
+    /** A reusable first stage on its way back to the pad. */
+    public boolean isReturning() {
+        return entityData.get(RETURNING_SINCE) != 0;
+    }
+
+    public int returnTicks() {
+        return returnTicks;
+    }
+
+    /** A landed first stage that must be serviced before it takes payloads again. */
+    public boolean needsService() {
+        return RocketApi.needsService(entityData.get(ITEM));
+    }
+
+    /** The service gantry is done with it. */
+    public void serviced() {
+        ItemStack item = entityData.get(ITEM);
+        entityData.set(ITEM, RocketApi.withService(item, RocketApi.flights(item), false));
+    }
+
+    /** Gametests only: how the next recovery ends, whatever the chances say. */
+    public void setRecoveryOutcome(int outcome) {
+        recoveryOutcome = outcome;
+    }
+
     public void launch() {
         entityData.set(ASCENDING, true);
         entityData.set(LAUNCHED_AT, level().getGameTime());
@@ -165,6 +200,7 @@ public class RocketEntity extends Entity {
         builder.define(LOADED_KG, 0);
         builder.define(PAYLOADS, 0);
         builder.define(LAUNCHED_AT, 0L);
+        builder.define(RETURNING_SINCE, 0L);
     }
 
     @Override
@@ -192,6 +228,10 @@ public class RocketEntity extends Entity {
     @Override
     public void tick() {
         super.tick();
+        if (isReturning()) {
+            returnFlight();
+            return;
+        }
         if (!isAscending()) {
             if (!level().isClientSide && tickCount % 10 == 0 && !level().getBlockState(blockPosition()).is(CreateAerospace.LAUNCH_PAD.get())) {
                 contents().forEach(this::spawnAtLocation);
@@ -227,19 +267,9 @@ public class RocketEntity extends Entity {
     private void explode() {
         var level = (ServerLevel) level();
         var server = level.getServer();
-        double h = getBbHeight(), w = getBbWidth(), x = getX(), y = getY(), z = getZ();
-        level.explode(this, x, y + h * .35, z, 6f, net.minecraft.world.level.Level.ExplosionInteraction.NONE);
-        // the explosion packet only reaches players near it; these go as far as the rocket can be seen
-        for (ServerPlayer p : level.players()) {
-            if (p.distanceToSqr(x, y + h / 2, z) > 512 * 512) continue;
-            for (int k = 0; k <= 4; k++)
-                level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, true, x, y + h * k / 4, z, 2, w / 3, 1, w / 3, 0);
-            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.FLAME, true, x, y + h / 2, z, 220, w / 2, h / 2, w / 2, .25);
-            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, true, x, y + h / 2, z, 160, w / 2, h / 2, w / 2, .08);
-            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.LAVA, true, x, y + h / 2, z, 80, w, h / 2, w, 0);
-        }
-        level.playSound(null, x, y + h / 2, z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 16f, 0.55f);
-        level.playSound(null, x, y + h / 2, z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST_FAR, SoundSource.BLOCKS, 16f, 0.5f);
+        double x = getX(), z = getZ();
+        // the explosion packet only reaches players near it; boom() sends to everyone who can see the rocket
+        boom(level, x, getY(), z, getBbWidth(), getBbHeight());
         var type = type();
         SatelliteData.get(server).alert(server, new Alert(Alert.LAUNCH_FAILURE, type.id().toString(), ownerName, payloads.size(),
                 (int) Math.floor(x), (int) Math.floor(z), server.overworld().getGameTime()));
@@ -282,7 +312,92 @@ public class RocketEntity extends Entity {
         } catch (RuntimeException e) {
             CreateAerospace.LOGGER.error("Rocket {} failed in deployed()", t.id(), e);
         }
+        var recovery = t.type().recovery();
+        if (recovery == null) {
+            discard();
+            return;
+        }
+        // a reusable first stage: decide now how its way back ends
+        if (recoveryOutcome < 0) {
+            double roll = random.nextDouble();
+            boolean failures = level.getGameRules().getBoolean(CreateAerospace.LAUNCH_FAILURES);
+            recoveryOutcome = !failures ? LAND : roll < recovery.noReturnChance() ? LOST
+                    : roll < recovery.noReturnChance() + recovery.landingFailureChance() ? CRASH : LAND;
+        }
+        payloads.clear();
+        loaders.clear();
+        syncLoad();
+        if (recoveryOutcome == LOST) {
+            tell("message.create_aerospace_engineering.booster_lost", t.type().name());
+            discard();
+            return;
+        }
+        topY = getY();
+        returnTicks = 0;
+        entityData.set(ASCENDING, false);
+        entityData.set(RETURNING_SINCE, level.getGameTime());
+    }
+
+    private void tell(String key, Object... args) {
+        if (level().getServer().getPlayerList().getPlayer(owner) instanceof ServerPlayer p) p.sendSystemMessage(Component.translatable(key, args));
+    }
+
+    /** Hold and turn back at the top, fall, brake and touch down on the pad it left; the position follows from the tick alone. */
+    private void returnFlight() {
+        returnTicks++;
+        if (level().isClientSide) {
+            returnTicks = (int) Math.max(1, level().getGameTime() - entityData.get(RETURNING_SINCE));
+            net.createaerospace.client.RocketRenderer.returnExhaust(this);
+            return;
+        }
+        if (Double.isNaN(startY)) startY = topY - 1;
+        setPos(getX(), startY + (topY - startY) * (1 - RocketApi.Recovery.fall(returnTicks)), getZ());
+        if (returnTicks < RocketApi.Recovery.HOLD_TICKS + RocketApi.Recovery.FALL_TICKS) return;
+        var level = (ServerLevel) level();
+        BlockPos pad = BlockPos.containing(getX(), startY, getZ());
+        boolean clear = level.getBlockState(pad).is(CreateAerospace.LAUNCH_PAD.get())
+                && level.getEntitiesOfClass(RocketEntity.class, new net.minecraft.world.phys.AABB(pad), r -> r != this && !r.isReturning()).isEmpty();
+        if (recoveryOutcome != LAND || !clear) {
+            crashLanding();
+            return;
+        }
+        // landed: standing on its pad again, empty and sooty, waiting for the gantry
+        setPos(getX(), startY, getZ());
+        ItemStack item = entityData.get(ITEM);
+        entityData.set(ITEM, RocketApi.withService(item, RocketApi.flights(item) + 1, true));
+        entityData.set(RETURNING_SINCE, 0L);
+        ascent = 0;
+        failAt = 0;
+        recoveryOutcome = -1;
+        startY = Double.NaN;
+        level.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 4f, 1.6f);
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, getX(), getY() + .5, getZ(), 120, 3, .2, 3, .25);
+        tell("message.create_aerospace_engineering.booster_landed", type().type().name(), RocketApi.flights(entityData.get(ITEM)));
+    }
+
+    /** The landing burn does not save it: it hits the pad and explodes. The pad survives; the rocket item is lost. */
+    private void crashLanding() {
+        var level = (ServerLevel) level();
+        var server = level.getServer();
+        boom(level, getX(), getY(), getZ(), getBbWidth(), Math.min(getBbHeight(), 20));
+        SatelliteData.get(server).alert(server, new Alert(Alert.LANDING_FAILURE, type().id().toString(), ownerName, 0,
+                (int) Math.floor(getX()), (int) Math.floor(getZ()), server.overworld().getGameTime()));
+        tell("message.create_aerospace_engineering.booster_crashed", type().type().name());
         discard();
+    }
+
+    private static void boom(ServerLevel level, double x, double y, double z, double w, double h) {
+        level.explode(null, x, y + h * .35, z, 6f, Level.ExplosionInteraction.NONE);
+        for (ServerPlayer p : level.players()) {
+            if (p.distanceToSqr(x, y + h / 2, z) > 512 * 512) continue;
+            for (int k = 0; k <= 4; k++)
+                level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, true, x, y + h * k / 4, z, 2, w / 3, 1, w / 3, 0);
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.FLAME, true, x, y + h / 2, z, 220, w / 2, h / 2, w / 2, .25);
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, true, x, y + h / 2, z, 160, w / 2, h / 2, w / 2, .08);
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.LAVA, true, x, y + h / 2, z, 80, w, h / 2, w, 0);
+        }
+        level.playSound(null, x, y + h / 2, z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 16f, 0.55f);
+        level.playSound(null, x, y + h / 2, z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST_FAR, SoundSource.BLOCKS, 16f, 0.5f);
     }
 
     @Override
@@ -319,6 +434,12 @@ public class RocketEntity extends Entity {
         failAt = t.getInt("failAt");
         if (t.contains("startY")) startY = t.getDouble("startY");
         if (isAscending()) entityData.set(LAUNCHED_AT, Math.max(1, level().getGameTime() - ascent));
+        recoveryOutcome = t.contains("recovery") ? t.getInt("recovery") : -1;
+        if (t.contains("returnTicks")) {
+            returnTicks = t.getInt("returnTicks");
+            topY = t.getDouble("topY");
+            entityData.set(RETURNING_SINCE, Math.max(1, level().getGameTime() - returnTicks));
+        }
     }
 
     @Override
@@ -343,5 +464,10 @@ public class RocketEntity extends Entity {
         t.putInt("ascent", ascent);
         if (failAt != 0) t.putInt("failAt", failAt);
         if (!Double.isNaN(startY)) t.putDouble("startY", startY);
+        if (recoveryOutcome >= 0) t.putInt("recovery", recoveryOutcome);
+        if (isReturning()) {
+            t.putInt("returnTicks", returnTicks);
+            t.putDouble("topY", topY);
+        }
     }
 }

@@ -78,6 +78,8 @@ public class CreateAerospace {
 
     public static final DeferredBlock<LaunchPadBlock> LAUNCH_PAD = BLOCKS.registerBlock("launch_pad", LaunchPadBlock::new, metal());
     public static final DeferredBlock<GroundConsoleBlock> GROUND_CONSOLE = BLOCKS.registerBlock("ground_console", GroundConsoleBlock::new, metal());
+    public static final DeferredBlock<net.createaerospace.block.ServiceGantryBlock> SERVICE_GANTRY =
+            BLOCKS.registerBlock("service_gantry", net.createaerospace.block.ServiceGantryBlock::new, metal());
 
     // Keep the relocated block, item and block-entity IDs so installed dishes survive the move.
     private static final String DISH_ID = "me_parabolic_antenna";
@@ -98,11 +100,15 @@ public class CreateAerospace {
     /** In the order of {@code rocket.H3.Variant}. */
     public static final java.util.List<DeferredItem<Item>> H3_ITEMS = java.util.Arrays.stream(net.createaerospace.rocket.H3.Variant.values())
             .map(v -> ITEMS.registerSimpleItem(v.path, new Item.Properties().stacksTo(1))).toList();
+    public static final DeferredItem<Item> FALCON_9 = ITEMS.registerSimpleItem("falcon_9", new Item.Properties().stacksTo(1));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
             BLOCK_ENTITIES.register("launch_pad", () -> BlockEntityType.Builder.of(LaunchPadBlockEntity::new, LAUNCH_PAD.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GroundConsoleBlockEntity>> GROUND_CONSOLE_BE =
             BLOCK_ENTITIES.register("ground_console", () -> BlockEntityType.Builder.of(GroundConsoleBlockEntity::new, GROUND_CONSOLE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<net.createaerospace.block.ServiceGantryBlockEntity>> SERVICE_GANTRY_BE =
+            BLOCK_ENTITIES.register("service_gantry", () -> BlockEntityType.Builder.of(net.createaerospace.block.ServiceGantryBlockEntity::new, SERVICE_GANTRY.get()).build(null));
 
     public static final DeferredHolder<EntityType<?>, EntityType<RocketEntity>> ROCKET = ENTITIES.register("rocket",
             () -> EntityType.Builder.<RocketEntity>of(RocketEntity::new, MobCategory.MISC).sized(STANDARD_ROCKET_WIDTH, STANDARD_ROCKET_HEIGHT)
@@ -115,6 +121,7 @@ public class CreateAerospace {
         var dishItem = RELOCATED_ITEMS.registerSimpleBlockItem(DISH);
         ITEMS.registerSimpleBlockItem(LAUNCH_PAD);
         ITEMS.registerSimpleBlockItem(GROUND_CONSOLE);
+        ITEMS.registerSimpleBlockItem(SERVICE_GANTRY);
         TABS.register("main", () -> CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup." + MOD_ID))
                 .icon(() -> SATELLITE.get().getDefaultInstance())
@@ -138,6 +145,7 @@ public class CreateAerospace {
         bus.addListener(RegisterCapabilitiesEvent.class, e -> {
             e.registerBlockEntity(Capabilities.FluidHandler.BLOCK, LAUNCH_PAD_BE.get(), (be, side) -> be.tank);
             e.registerBlockEntity(Capabilities.ItemHandler.BLOCK, DISH_BE.get(), (be, side) -> be.items);
+            e.registerBlockEntity(Capabilities.ItemHandler.BLOCK, SERVICE_GANTRY_BE.get(), (be, side) -> be.parts);
         });
         bus.addListener(RegisterPayloadHandlersEvent.class, net.createaerospace.photo.PhotoPackets::register);
         bus.addListener(RegisterPayloadHandlersEvent.class, net.createaerospace.block.ConsoleSelect::register);
@@ -148,6 +156,7 @@ public class CreateAerospace {
             net.createaerospace.api.RocketApi.registerRocket(net.createaerospace.api.RocketApi.STANDARD, ROCKET_ITEM.get(),
                     new net.createaerospace.api.RocketApi.RocketType(Component.translatable("item." + MOD_ID + ".rocket"), 1000, 4000, 200, 0.03, 2.5, STANDARD_ROCKET_WIDTH, STANDARD_ROCKET_HEIGHT));
             net.createaerospace.rocket.H3.register(H3_ITEMS);
+            net.createaerospace.rocket.Falcon9.register(FALCON_9.get());
             net.createaerospace.api.AerospaceApi.registerPayload(COMMUNICATION_PAYLOAD, COMMUNICATION_SATELLITE.get(),
                     () -> Component.translatable("item." + MOD_ID + ".communication_satellite"));
             DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get());

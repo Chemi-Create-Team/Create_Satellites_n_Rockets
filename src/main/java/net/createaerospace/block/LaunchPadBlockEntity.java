@@ -28,7 +28,7 @@ public class LaunchPadBlockEntity extends BlockEntity {
     /** Burns the fuel and fires the loaded rocket. Returns false, changing nothing, if there is no rocket or too little fuel. */
     public boolean tryLaunch() {
         RocketEntity r = LaunchPadBlock.standing(level, worldPosition);
-        if (r == null || r.payloadCount() == 0) return false;
+        if (r == null || r.payloadCount() == 0 || r.needsService()) return false;
         int fuel = r.type().type().fuelMb();
         if (tank.getFluidAmount() < fuel) return false;
         if (fuel > 0) tank.drain(fuel, IFluidHandler.FluidAction.EXECUTE);

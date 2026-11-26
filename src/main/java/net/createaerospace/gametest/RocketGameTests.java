@@ -525,4 +525,109 @@ public class RocketGameTests {
             h.assertTrue(SatelliteData.get(server).data(s.id()).isEmpty(), "its data went with it");
         });
     }
+
+    // ---- Falcon 9: the first stage comes back --------------------------------------------------------------------------------
+
+    /** A Falcon 9 on the pad with one satellite and a full tank, its way back already decided. */
+    private static RocketEntity falcon(GameTestHelper h, Player p, int outcome) {
+        noRandomFailures(h);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
+        use(h, p, new ItemStack(CreateAerospace.FALCON_9.get()));
+        use(h, p, new ItemStack(CreateAerospace.SATELLITE.get()));
+        var tank = ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank;
+        tank.fill(new FluidStack(Fluids.LAVA, 8000), IFluidHandler.FluidAction.EXECUTE);
+        RocketEntity r = rockets(h).get(0);
+        if (outcome >= 0) r.setRecoveryOutcome(outcome);
+        h.assertTrue(((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tryLaunch(), "the Falcon 9 lifts off");
+        h.assertTrue(tank.getFluidAmount() == 8000 - 7640, "the launch burnt 7640 mB");
+        return r;
+    }
+
+    private static void dropSatellites(GameTestHelper h, Player p) {
+        var data = SatelliteData.get(h.getLevel().getServer());
+        data.list().stream().filter(s -> s.owner().equals(p.getUUID())).map(Satellite::id).toList().forEach(id -> data.remove(h.getLevel().getServer(), id));
+    }
+
+    @GameTest(template = "test_empty", batch = "falcon_size", timeoutTicks = 100)
+    public static void aFalcon9StandsAtFullSizeAndLiftsElevenSatellites(GameTestHelper h) {
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
+        use(h, p, new ItemStack(CreateAerospace.FALCON_9.get()));
+        RocketEntity r = rockets(h).get(0);
+        h.assertTrue(r.typeId().equals(net.createaerospace.rocket.Falcon9.ID), "as a Falcon 9");
+        h.assertTrue(Math.abs(r.getBbHeight() - 70f) < 1e-3 && Math.abs(r.getBbWidth() - 5.2f) < 1e-3, "70 m by 5.2 m, got " + r.getBbWidth() + " x " + r.getBbHeight());
+        ItemStack sats = new ItemStack(CreateAerospace.SATELLITE.get(), 16);
+        for (int i = 0; i < 16; i++) use(h, p, sats);
+        h.assertTrue(r.payloadCount() == 11 && r.loadedKg() == 5500, "5.5 t to GTO with the booster coming back is 11 satellites, got " + r.payloadCount());
+        h.assertTrue(net.createaerospace.rocket.Falcon9.pitch(10) == 0 && net.createaerospace.rocket.Falcon9.pitch(100) < 1e-9
+                && net.createaerospace.rocket.Falcon9.pitch(60) > 100 && net.createaerospace.rocket.Falcon9.legs(340) == 1, "it flips back, turns upright and lands on its legs");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty", batch = "falcon_land", timeoutTicks = 4000)
+    public static void aFalcon9FirstStageLandsOnItsPadAndFliesAgainOnlyAfterServiceAndFuel(GameTestHelper h) {
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        RocketEntity r = falcon(h, p, RocketEntity.LAND);
+        BlockPos gantry = PAD.east(3);
+        var tank = ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank;
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(r.isReturning(), "the first stage turns back once the satellite is out"))
+                .thenExecute(() -> h.assertTrue(mine(h, p) == 1, "the satellite reached orbit"))
+                .thenWaitUntil(() -> h.assertTrue(!r.isReturning() && r.isAlive(), "and the first stage lands"))
+                .thenExecute(() -> {
+                    h.assertTrue(r.getY() >= h.absolutePos(PAD).getY() && r.getY() < h.absolutePos(PAD).getY() + 1.5,
+                            "back on the pad it left, at " + r.getY());
+                    h.assertTrue(r.needsService() && net.createaerospace.api.RocketApi.flights(r.rocketItem()) == 1, "flown once and in need of service");
+                    ItemStack sat = new ItemStack(CreateAerospace.SATELLITE.get());
+                    use(h, p, sat);
+                    h.assertTrue(!sat.isEmpty() && r.payloadCount() == 0, "it takes no payload before it is serviced");
+                    tank.fill(new FluidStack(Fluids.LAVA, 8000), IFluidHandler.FluidAction.EXECUTE);
+                    h.assertFalse(((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tryLaunch(), "it does not fly before it is serviced");
+                    h.setBlock(gantry, CreateAerospace.SERVICE_GANTRY.get().defaultBlockState());
+                    var be = (net.createaerospace.block.ServiceGantryBlockEntity) h.getBlockEntity(gantry);
+                    h.assertTrue(be.target() == r, "the gantry finds the booster");
+                    be.parts.insertItem(0, com.simibubi.create.AllItems.IRON_SHEET.asStack(64), false);
+                    be.parts.insertItem(1, com.simibubi.create.AllItems.PRECISION_MECHANISM.asStack(64), false);
+                    h.assertTrue(be.stocked(), "8 iron sheets and 2 precision mechanisms stock it");
+                })
+                .thenWaitUntil(() -> h.assertFalse(r.needsService(), "the gantry services the booster"))
+                .thenExecute(() -> {
+                    var be = (net.createaerospace.block.ServiceGantryBlockEntity) h.getBlockEntity(gantry);
+                    h.assertTrue(be.parts.getStackInSlot(0).isEmpty() && be.parts.getStackInSlot(1).isEmpty(), "and uses up the parts");
+                    h.assertTrue(net.createaerospace.api.RocketApi.flights(r.rocketItem()) == 1, "the flight count stays");
+                    ItemStack sat = new ItemStack(CreateAerospace.SATELLITE.get());
+                    use(h, p, sat);
+                    h.assertTrue(sat.isEmpty(), "a serviced booster takes payloads again");
+                    dropSatellites(h, p);
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "test_empty", batch = "falcon_crash", timeoutTicks = 1200)
+    public static void aFailedLandingExplodesOnThePadAndWarnsTheConsoles(GameTestHelper h) {
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        falcon(h, p, RocketEntity.CRASH);
+        var data = SatelliteData.get(h.getLevel().getServer());
+        long launchedAt = h.getLevel().getGameTime();
+        h.succeedWhen(() -> {
+            h.assertTrue(rockets(h).isEmpty(), "the booster is gone");
+            var last = data.alerts().get(data.alerts().size() - 1);
+            h.assertTrue(last.kind() == net.createaerospace.orbit.Alert.LANDING_FAILURE && last.time() >= launchedAt
+                    && last.subject().equals(net.createaerospace.rocket.Falcon9.ID.toString()), "a landing failure of the Falcon 9 is raised");
+            h.assertTrue(mine(h, p) == 1, "the satellite still reached orbit");
+            h.assertTrue(h.getBlockState(PAD).is(CreateAerospace.LAUNCH_PAD.get()), "the pad survives");
+            dropSatellites(h, p);
+        });
+    }
+
+    @GameTest(template = "test_empty", batch = "falcon_lost", timeoutTicks = 800)
+    public static void aLostFirstStageNeverComesBack(GameTestHelper h) {
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        RocketEntity r = falcon(h, p, RocketEntity.LOST);
+        h.succeedWhen(() -> {
+            h.assertTrue(r.isRemoved() && !r.isReturning(), "the booster is gone after the release, it never turns back");
+            h.assertTrue(mine(h, p) == 1, "the satellite reached orbit");
+            dropSatellites(h, p);
+        });
+    }
 }

@@ -28,7 +28,7 @@ public class RocketRenderer extends EntityRenderer<RocketEntity> {
             try {
                 custom.render(new RocketRenderers.Context(rocket.typeId(), rocket.rocketItem(), rocket.isAscending(), rocket.ascentTicks(),
                         rocket.loadedKg(), t.maxPayloadKg(), rocket.payloadCount(), rocket.getBbWidth(), rocket.getBbHeight(),
-                        rocket.level().getGameTime(), partialTick, ps, buffers, light));
+                        rocket.level().getGameTime(), partialTick, ps, buffers, light, rocket.isReturning(), rocket.returnTicks()));
             } catch (RuntimeException e) {
                 if (FAILED.add(rocket.typeId())) CreateAerospace.LOGGER.error("Renderer of rocket {} failed", rocket.typeId(), e);
             }
@@ -40,7 +40,7 @@ public class RocketRenderer extends EntityRenderer<RocketEntity> {
         float width = rocket.getBbWidth() / CreateAerospace.STANDARD_ROCKET_WIDTH;
         float height = rocket.getBbHeight() / CreateAerospace.STANDARD_ROCKET_HEIGHT;
         ps.scale(width, height, width);
-        RocketModel.render(ps.last(), buffers.getBuffer(RenderType.entityCutout(TEXTURE)), rocket.isAscending() ? 0xF000F0 : light);
+        RocketModel.render(ps.last(), buffers.getBuffer(RenderType.entityCutout(TEXTURE)), rocket.isAscending() || rocket.isReturning() ? 0xF000F0 : light);
         ps.popPose();
         super.render(rocket, yaw, partialTick, ps, buffers, light);
     }
@@ -52,6 +52,17 @@ public class RocketRenderer extends EntityRenderer<RocketEntity> {
         try {
             if (custom != null) custom.exhaust(level, rocket.getX(), rocket.getY(), rocket.getZ(), rocket.ascentTicks(), rocket.getRandom());
             else RocketRenderers.defaultExhaust(level, rocket.getX(), rocket.getY(), rocket.getZ(), rocket.getRandom());
+        } catch (RuntimeException e) {
+            if (FAILED.add(rocket.typeId())) CreateAerospace.LOGGER.error("Exhaust of rocket {} failed", rocket.typeId(), e);
+        }
+    }
+
+    /** Client tick of a first stage coming back. */
+    public static void returnExhaust(RocketEntity rocket) {
+        var custom = RocketRenderers.get(rocket.typeId());
+        if (custom == null) return;
+        try {
+            custom.returnExhaust((net.minecraft.client.multiplayer.ClientLevel) rocket.level(), rocket.getX(), rocket.getY(), rocket.getZ(), rocket.returnTicks(), rocket.getRandom());
         } catch (RuntimeException e) {
             if (FAILED.add(rocket.typeId())) CreateAerospace.LOGGER.error("Exhaust of rocket {} failed", rocket.typeId(), e);
         }

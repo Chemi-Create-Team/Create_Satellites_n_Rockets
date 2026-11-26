@@ -9,7 +9,7 @@ import net.minecraft.network.FriendlyByteBuf;
  * a reentry names the satellite and where it comes down.
  */
 public record Alert(int kind, String subject, String owner, int count, int x, int z, long time) {
-    public static final int LAUNCH_FAILURE = 0, REENTRY = 1;
+    public static final int LAUNCH_FAILURE = 0, REENTRY = 1, LANDING_FAILURE = 2;
     public static final int SHOWN_TICKS = 6000;
     static final int KEPT = 8;
 

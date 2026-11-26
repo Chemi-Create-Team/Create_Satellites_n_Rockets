@@ -19,6 +19,7 @@ public final class ClientSetup {
         bus.addListener(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent.class, e -> e.enqueueWork(() -> {
             net.createaerospace.compat.cfs.CfsCompat.registerClient();
             H3Renderer.registerAll();
+            Falcon9Renderer.register();
             OrbitalDishVisual.register();
         }));
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent.class, ClientSetup::tooltip);
@@ -39,6 +40,13 @@ public final class ClientSetup {
                     type.maxPayloadKg(), type.fuelMb()).withStyle(gray));
             e.getToolTip().add(net.minecraft.network.chat.Component.translatable("tooltip.create_aerospace_engineering.rocket_size",
                     type.width(), type.height()).withStyle(gray));
+            if (type.recovery() != null) {
+                int flights = net.createaerospace.api.RocketApi.flights(e.getItemStack());
+                e.getToolTip().add(net.minecraft.network.chat.Component.translatable("tooltip.create_aerospace_engineering.flights", flights).withStyle(gray));
+                if (net.createaerospace.api.RocketApi.needsService(e.getItemStack()))
+                    e.getToolTip().add(net.minecraft.network.chat.Component.translatable("tooltip.create_aerospace_engineering.needs_service")
+                            .withStyle(net.minecraft.ChatFormatting.GOLD));
+            }
         }
     }
 }

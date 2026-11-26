@@ -105,5 +105,18 @@
   "photo.create_aerospace_engineering.loading": "正在接收卫星图像…",
   "message.create_aerospace_engineering.not_your_rocket": "只有竖起这枚火箭的玩家（或管理员）才能把它取下。",
   "photo.create_aerospace_engineering.disabled": "本服务器已关闭卫星照片（游戏规则 caeSatellitePhotos）。",
-  "photo.create_aerospace_engineering.denied": "只有卫星的所有者（或管理员）才能用它拍照。"
+  "photo.create_aerospace_engineering.denied": "只有卫星的所有者（或管理员）才能用它拍照。",
+  "item.create_aerospace_engineering.falcon_9": "猎鹰9号",
+  "block.create_aerospace_engineering.service_gantry": "维护塔架",
+  "message.create_aerospace_engineering.booster_lost": "%s：第一级未能返回。",
+  "message.create_aerospace_engineering.booster_landed": "%s：第一级已降落回发射台（第%s次飞行）。在维护塔架维护并给发射台储罐加注燃料后即可复用。",
+  "message.create_aerospace_engineering.booster_crashed": "%s：第一级着陆失败！",
+  "message.create_aerospace_engineering.needs_service": "%s 需要在维护塔架维护后才能装载。",
+  "message.create_aerospace_engineering.rocket_needs_service": "%s（已飞行 %s 次）：需要在维护塔架维护",
+  "message.create_aerospace_engineering.gantry_status": "铁板 %s/%s，精密构件 %s/%s - %s",
+  "message.create_aerospace_engineering.gantry_idle": "8格内没有需要维护的助推器",
+  "message.create_aerospace_engineering.gantry_target": "正在维护 %s：%s%%",
+  "console.create_aerospace_engineering.alert.landing_failure": "! 着陆失败 %s (%s) X %s Z %s",
+  "tooltip.create_aerospace_engineering.flights": "飞行次数：%s",
+  "tooltip.create_aerospace_engineering.needs_service": "需要维护"
 }
