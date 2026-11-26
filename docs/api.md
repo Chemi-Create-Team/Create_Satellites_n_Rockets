@@ -23,6 +23,7 @@ GPSや通信の中継のような機能は、登録したMODが衛星の位置�
    | 2 | 0.1.7 | 重さ（`massKg`）、ロケットAPI |
    | 3 | 0.1.8 | ロケットの大きさ 幅10・高さ60まで |
    | 4 | 0.1.10 | ロケットの大きさ 幅16・高さ100まで |
+   | 6 | 0.1.17 | `Recovery`（第1段の帰還）、`flights`・`needsService`・`withService`、`Context.returning`・`returnTicks`、`Renderer.returnExhaust` |
    | 5 | 0.1.11 | `failureChance`、`Hooks.failed`、`state`（0.1.15のJARも同じAPI。登録のロックを1つにまとめ、`visibleFrom` を速くした） |
 
 4. CAEのクラスを参照するのは連携用の1クラスだけにし、`ModList.get().isLoaded("create_aerospace_engineering")` を確かめてから呼びます。CAEがない環境では、そのクラスを読み込みません。
@@ -158,8 +159,10 @@ RocketRenderers.register(HEAVY, new RocketRenderers.Renderer() {
 - 大きさはエンティティの当たり判定です。ロケットは発射台の中心に立つので、幅が1を超えると隣のブロックの上の空間も空いている必要があります。
 - 描画を登録しなかった種類は、CAEのロケットのモデルを登録された幅・高さに合わせて描きます。
 - CAEのH3ロケット（`rocket/H3`、描画は `client/H3Renderer`）もこのAPIで登録しています。旋盤の輪郭（高さと半径の組）で機体を作り、分離や噴射を描く例として参照できます。
-- `Context` には種類のID、アイテム、上昇中か、上昇のtick数、積載重量・最大積載量・積んだ数、幅・高さ、ゲーム時刻、partialTick、PoseStack、バッファ、明るさが入ります。
+- `Context` には種類のID、アイテム、上昇中か、上昇のtick数、積載重量・最大積載量・積んだ数、幅・高さ、ゲーム時刻、partialTick、PoseStack、バッファ、明るさ、帰還中か・帰還のtick数（API 6）が入ります。
 - `RocketType` の9番目の値 `failureChance`（0〜1、API 5）は打ち上げに失敗する確率です。8つの値のコンストラクタ（API 4以前）では `DEFAULT_FAILURE_CHANCE` = 3% になります。失敗はゲームルール `caeLaunchFailures` で止められます。
+- `RocketType` の10番目の値 `recovery`（API 6）を `new RocketApi.Recovery(noReturnChance, landingFailureChance)` にすると、衛星を放出したあと第1段が発射台に帰ってくる再使用ロケットになります（null なら使い捨て）。確率の合計は1以下です。帰還は `Recovery.HOLD_TICKS`（100）の静止と旋回、`FALL_TICKS`（240）の降下で、高さは `Recovery.fall(t)` に従います。着陸するとアイテムの飛行回数（`RocketApi.flights`）が1増え、要整備（`needsService`）になります。整備ガントリーが外すまで積載も発射もできません。`withService(stack, flights, needsService)` で書き換えられます。
+- 帰還中は `Context.returning()` が true、`returnTicks()` が放出からのtick数です。`render` で姿勢や着陸脚を描き、`Renderer.returnExhaust(level, x, y, z, returnTicks, random)`（省略可）で帰還中のパーティクルと音を出します。CAEのファルコン9（`rocket/Falcon9`、`client/Falcon9Renderer`）が例です。
 - `Hooks` と `Renderer` の例外はCAEが記録して続けます（ロケットも衛星も失われません。描画の例外は種類ごとに1回だけ記録）。
 - 同じID・同じアイテムの二重登録や、ペイロードとして登録済みのアイテムは例外になります。範囲外の数値は `RocketType` の作成時に例外になります。
 

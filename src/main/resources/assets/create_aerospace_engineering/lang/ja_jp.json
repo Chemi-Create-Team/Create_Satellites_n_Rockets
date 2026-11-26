@@ -104,5 +104,18 @@
   "photo.create_aerospace_engineering.loading": "衛星写真を読み込み中…",
   "message.create_aerospace_engineering.not_your_rocket": "このロケットを降ろせるのは、立てたプレイヤーかOPだけ",
   "photo.create_aerospace_engineering.disabled": "このサーバーでは衛星写真が無効になっている（ゲームルール caeSatellitePhotos）",
-  "photo.create_aerospace_engineering.denied": "衛星写真を撮れるのは、その衛星の持ち主かOPだけ"
+  "photo.create_aerospace_engineering.denied": "衛星写真を撮れるのは、その衛星の持ち主かOPだけ",
+  "item.create_aerospace_engineering.falcon_9": "ファルコン9",
+  "block.create_aerospace_engineering.service_gantry": "整備ガントリー",
+  "message.create_aerospace_engineering.booster_lost": "%s: 第1段は帰ってきませんでした。",
+  "message.create_aerospace_engineering.booster_landed": "%s: 第1段が発射台に着陸しました（%s回目の飛行）。整備ガントリーで整備し、発射台のタンクに燃料を補給すれば再使用できます。",
+  "message.create_aerospace_engineering.booster_crashed": "%s: 第1段が着陸に失敗しました！",
+  "message.create_aerospace_engineering.needs_service": "%s は整備ガントリーで整備するまで積み込めません。",
+  "message.create_aerospace_engineering.rocket_needs_service": "%s（飛行 %s 回）: 整備ガントリーでの整備が必要",
+  "message.create_aerospace_engineering.gantry_status": "鉄板 %s/%s、精密機構 %s/%s - %s",
+  "message.create_aerospace_engineering.gantry_idle": "8ブロック以内に整備するブースターがありません",
+  "message.create_aerospace_engineering.gantry_target": "%s を整備中: %s%%",
+  "console.create_aerospace_engineering.alert.landing_failure": "! 着陸失敗 %s (%s) X %s Z %s",
+  "tooltip.create_aerospace_engineering.flights": "飛行回数: %s",
+  "tooltip.create_aerospace_engineering.needs_service": "要整備"
 }

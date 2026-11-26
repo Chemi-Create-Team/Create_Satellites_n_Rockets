@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SPS",
+    "TRT",
+    "EEE"
+  ],
+  "key": {
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "P": {
+      "item": "create:precision_mechanism"
+    },
+    "T": {
+      "item": "create:fluid_tank"
+    },
+    "R": {
+      "item": "create_aerospace_engineering:rocket"
+    },
+    "E": {
+      "item": "create:propeller"
+    }
+  },
+  "result": {
+    "id": "create_aerospace_engineering:falcon_9",
+    "count": 1
+  }
+}

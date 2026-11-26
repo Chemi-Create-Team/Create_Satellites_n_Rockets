@@ -3,6 +3,7 @@
   "values": [
     "create_aerospace_engineering:launch_pad",
     "create_aerospace_engineering:ground_console",
-    "create_frontier_science:me_parabolic_antenna"
+    "create_frontier_science:me_parabolic_antenna",
+    "create_aerospace_engineering:service_gantry"
   ]
 }

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "create_aerospace_engineering:block/service_gantry_top",
+    "side": "create_aerospace_engineering:block/service_gantry_side"
+  }
+}

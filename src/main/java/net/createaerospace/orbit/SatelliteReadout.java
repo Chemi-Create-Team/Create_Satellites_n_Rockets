@@ -71,6 +71,10 @@ public record SatelliteReadout(String name, int number, int count, String lat, S
 
     /** The warning as one line: what happened, to what, where. */
     public static Component alertLine(Alert a) {
+        if (a.kind() == Alert.LANDING_FAILURE) {
+            var type = net.createaerospace.api.RocketApi.rocketOrStandard(ResourceLocation.tryParse(a.subject()));
+            return Component.translatable(K + "alert.landing_failure", type.type().name(), a.owner(), a.x(), a.z()).withColor(ALERT_RED);
+        }
         if (a.kind() == Alert.LAUNCH_FAILURE) {
             var type = net.createaerospace.api.RocketApi.rocketOrStandard(ResourceLocation.tryParse(a.subject()));
             Component name = type == null ? Component.literal(a.subject()) : type.type().name();

@@ -104,5 +104,18 @@
   "photo.create_aerospace_engineering.loading": "Receiving photo tiles…",
   "message.create_aerospace_engineering.not_your_rocket": "Only the player who stood this rocket up (or an operator) can take it down.",
   "photo.create_aerospace_engineering.disabled": "Satellite photos are turned off on this server (game rule caeSatellitePhotos).",
-  "photo.create_aerospace_engineering.denied": "Only the owner of the satellite (or an operator) can take photos with it."
+  "photo.create_aerospace_engineering.denied": "Only the owner of the satellite (or an operator) can take photos with it.",
+  "item.create_aerospace_engineering.falcon_9": "Falcon 9",
+  "block.create_aerospace_engineering.service_gantry": "Service Gantry",
+  "message.create_aerospace_engineering.booster_lost": "%s: the first stage did not come back.",
+  "message.create_aerospace_engineering.booster_landed": "%s: the first stage landed back on the pad (flight %s). Service it at a Service Gantry and refill the pad tank to fly it again.",
+  "message.create_aerospace_engineering.booster_crashed": "%s: the first stage crashed while landing!",
+  "message.create_aerospace_engineering.needs_service": "%s needs service at a Service Gantry before it can be loaded.",
+  "message.create_aerospace_engineering.rocket_needs_service": "%s (flown %s times): needs service at a Service Gantry",
+  "message.create_aerospace_engineering.gantry_status": "Iron sheets %s/%s, precision mechanisms %s/%s - %s",
+  "message.create_aerospace_engineering.gantry_idle": "no booster to service within 8 blocks",
+  "message.create_aerospace_engineering.gantry_target": "servicing %s: %s%%",
+  "console.create_aerospace_engineering.alert.landing_failure": "! LANDING FAILURE %s (%s) at X %s Z %s",
+  "tooltip.create_aerospace_engineering.flights": "Flights: %s",
+  "tooltip.create_aerospace_engineering.needs_service": "Needs service"
 }

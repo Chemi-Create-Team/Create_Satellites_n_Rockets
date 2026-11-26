@@ -29,6 +29,9 @@ Minecraft **1.21.1**, NeoForge, Java **21**. The required and optional mods are 
 - **H3 rockets**. The JAXA / Mitsubishi Heavy Industries H3 at full size (1 block = 1 m) in its three flown configurations, 30S,
   22S and 24W, with the steam cloud, the SRB-3 flame and trail, the hydrogen flame of the LE-9 and the SRB-3 and fairing
   separations. [H3](docs/launch.md#h3ロケットh3_30sh3_22sh3_24w)
+- **Falcon 9**. The SpaceX Falcon 9 at full size (70 m). After it releases its satellites the first stage flips, burns back,
+  falls with its grid fins out, lands on its legs on the pad it left and can fly again once a Service Gantry has serviced it and
+  the pad is refuelled. 30% of boosters do not come back and 10% crash on landing. [Falcon 9](docs/launch.md#ファルコン9falcon_9)
 - **Satellites and orbits**. A satellite goes into geostationary orbit over the equator at the launch longitude. Change its
   altitude (four tiers) and inclination (0, 30, 55, 90 degrees) to have it cross the sky; a change keeps it over the same spot. The
   world is a map of the Earth, one degree to 1000 blocks. [Orbits and coordinates](docs/orbit.md)

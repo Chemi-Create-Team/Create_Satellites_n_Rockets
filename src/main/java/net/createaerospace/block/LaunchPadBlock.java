@@ -62,7 +62,7 @@ public class LaunchPadBlock extends Block implements EntityBlock, IWrenchable {
     /** The rocket standing on the pad (not yet climbing), or null. */
     public static RocketEntity standing(Level level, BlockPos pos) {
         var list = level.getEntitiesOfClass(RocketEntity.class, new AABB(pos),
-                r -> !r.isAscending() && r.blockPosition().equals(pos));
+                r -> !r.isAscending() && !r.isReturning() && r.blockPosition().equals(pos));
         return list.isEmpty() ? null : list.get(0);
     }
 
@@ -110,6 +110,8 @@ public class LaunchPadBlock extends Block implements EntityBlock, IWrenchable {
         }
         if (standing == null) {
             say(player, "no_rocket");
+        } else if (standing.needsService()) {
+            say(player, "needs_service", standing.type().type().name());
         } else if (!standing.addPayload(stack, player)) {
             say(player, "too_heavy", AerospaceApi.massKg(stack), standing.loadedKg(), standing.type().type().maxPayloadKg());
         } else {
@@ -137,6 +139,7 @@ public class LaunchPadBlock extends Block implements EntityBlock, IWrenchable {
             return InteractionResult.SUCCESS;
         }
         Component rocket = r == null ? Component.translatable("message.create_aerospace_engineering.empty")
+                : r.needsService() ? Component.translatable("message.create_aerospace_engineering.rocket_needs_service", r.type().type().name(), RocketApi.flights(r.rocketItem()))
                 : Component.translatable("message.create_aerospace_engineering.rocket_status", r.type().type().name(), r.payloadCount(), r.loadedKg(), r.type().type().maxPayloadKg());
         int fuel = (r == null ? RocketApi.rocketOrStandard(RocketApi.STANDARD) : r.type()).type().fuelMb();
         say(player, "pad_status", pad.tank.getFluidAmount(), pad.tank.getCapacity(), fuel, rocket);

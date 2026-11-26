@@ -25,7 +25,7 @@ import net.minecraft.util.RandomSource;
  * flame with shock diamonds. The SRB-3s drop away at {@link H3#SRB_SEP} of the climb and the fairing opens at {@link H3#FAIRING_SEP}.
  */
 public final class H3Renderer implements RocketRenderers.Renderer {
-    private static final ResourceLocation WHITE = CreateAerospace.id("textures/misc/white.png");
+    static final ResourceLocation WHITE = CreateAerospace.id("textures/misc/white.png");
     private static final int SEG = 24;
     // fresh polyisocyanurate foam is cream and yellows towards orange in the sun; H3s fly yellow-orange
     private static final int FOAM = 0xFFE3A24A, FAIRING = 0xFFF4F4F2, CARBON = 0xFF2B2B30, AFT = 0xFF7D8088, ATTACH = 0xFFEBC27E,
@@ -47,19 +47,19 @@ public final class H3Renderer implements RocketRenderers.Renderer {
     // ---- geometry -------------------------------------------------------------------------------------------------------------
 
     /** A lathe profile: pairs of (y, r) in metres, each band coloured like its lower end. */
-    private static void lathe(VertexConsumer vc, PoseStack.Pose pose, double cx, double cz, double a0, double a1, int light, double[] yr, int[] colors) {
+    static void lathe(VertexConsumer vc, PoseStack.Pose pose, double cx, double cz, double a0, double a1, int light, double[] yr, int[] colors) {
         for (int i = 0; i + 3 < yr.length; i += 2) {
             band(vc, pose, cx, cz, yr[i], yr[i + 1], yr[i + 2], yr[i + 3], a0, a1, colors[i / 2], light);
         }
     }
 
-    private static void band(VertexConsumer vc, PoseStack.Pose pose, double cx, double cz, double y0, double r0, double y1, double r1,
+    static void band(VertexConsumer vc, PoseStack.Pose pose, double cx, double cz, double y0, double r0, double y1, double r1,
                              double a0, double a1, int color, int light) {
         band(vc, pose, cx, cz, y0, r0, y1, r1, a0, a1, color, color, light);
     }
 
     /** {@code color0} at the y0 ring, {@code color1} at the y1 ring; flames fade to clear at their tip this way. */
-    private static void band(VertexConsumer vc, PoseStack.Pose pose, double cx, double cz, double y0, double r0, double y1, double r1,
+    static void band(VertexConsumer vc, PoseStack.Pose pose, double cx, double cz, double y0, double r0, double y1, double r1,
                              double a0, double a1, int color0, int color1, int light) {
         int n = Math.max(2, (int) Math.ceil(SEG * (a1 - a0) / (2 * Math.PI)));
         double dy = y1 - y0, dr = r0 - r1;
@@ -82,7 +82,7 @@ public final class H3Renderer implements RocketRenderers.Renderer {
                 .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, nx / len, ny / len, nz / len);
     }
 
-    private static final double TAU = Math.PI * 2;
+    static final double TAU = Math.PI * 2;
 
     private void core(VertexConsumer vc, PoseStack.Pose pose, int light) {
         double r = H3.CORE_D / 2;
@@ -181,7 +181,7 @@ public final class H3Renderer implements RocketRenderers.Renderer {
     // ---- flames -----------------------------------------------------------------------------------------------------------------
 
     /** A glowing cone hanging down from (x, y0, z), {@code argb} at the nozzle fading to clear at the tip. */
-    private static void plume(VertexConsumer vc, PoseStack.Pose pose, double x, double z, double y0, double r0, double length, double r1, int argb) {
+    static void plume(VertexConsumer vc, PoseStack.Pose pose, double x, double z, double y0, double r0, double length, double r1, int argb) {
         band(vc, pose, x, z, y0 - length, r1, y0, r0, 0, TAU, argb & 0x00FFFFFF, argb, 0xF000F0);
     }
 

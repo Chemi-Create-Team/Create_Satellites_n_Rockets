@@ -40,16 +40,21 @@ public final class RocketRenderers {
         default void exhaust(ClientLevel level, double x, double y, double z, int ascentTicks, RandomSource random) {
             defaultExhaust(level, x, y, z, random);
         }
+
+        /** Every client tick while a reusable first stage comes back to its pad (API 6); nothing by default. */
+        default void returnExhaust(ClientLevel level, double x, double y, double z, int returnTicks, RandomSource random) {}
     }
 
     /**
      * {@code rocketItem} is the item the rocket was stood up with, with its components (colour, a name...), {@code ascentTicks} counts
      * from lift-off (0 while it stands), {@code loadedKg} and {@code payloads} are what is on board. {@code packedLight} is the light
      * at the rocket; a climbing rocket may want full brightness ({@code 0xF000F0}).
+     * {@code returning} (API 6): a reusable first stage on its way back ({@code RocketApi.Recovery}); {@code returnTicks} counts from
+     * the release of the payloads. The rocket item carries the flight count ({@code RocketApi.flights}).
      */
     public record Context(ResourceLocation type, ItemStack rocketItem, boolean ascending, int ascentTicks, int loadedKg, int maxPayloadKg,
                           int payloads, float width, float height, long gameTime, float partialTick, PoseStack pose,
-                          MultiBufferSource buffers, int packedLight) {}
+                          MultiBufferSource buffers, int packedLight, boolean returning, int returnTicks) {}
 
     /** CAE's own exhaust, for a renderer that wants to add to it. */
     public static void defaultExhaust(ClientLevel level, double x, double y, double z, RandomSource random) {
