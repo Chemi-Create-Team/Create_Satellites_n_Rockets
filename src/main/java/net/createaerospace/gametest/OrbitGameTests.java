@@ -257,6 +257,31 @@ public class OrbitGameTests {
     }
 
     @GameTest(template = "test_empty")
+    public static void aClickOnTheAppMapFindsTheDotTheRendererDrew(GameTestHelper h) {
+        // a canvas of 3 by 1.68 blocks (an LCD of 3 by 2 in a window), the board at 35N 139E, turned one step
+        float w = 3, hgt = 1.68f;
+        var map = net.createaerospace.compat.cfs.CfsLayout.mapView(w, hgt, 35, 139, 1);
+        java.util.List<Satellite> all = new java.util.ArrayList<>();
+        for (int i = 0; i < 12; i++) all.add(new Satellite(UUID.randomUUID(), "S" + i, UUID.randomUUID(), "", i % 4, i % 3, i * .5, i * .9, 0, Satellite.BEACON));
+        long tick = 500;
+        int found = 0;
+        for (var spot : net.createaerospace.client.globe.Spots.of(map.view(), all, tick)) {
+            if (spot.hidden() || !map.contains(spot.x(), spot.y())) continue;
+            // the server gets the click as fractions of the canvas
+            double x = spot.x() / w, y = spot.y() / hgt;
+            var again = net.createaerospace.compat.cfs.CfsLayout.mapView(w, hgt, 35, 139, 1);
+            var picked = net.createaerospace.client.globe.Spots.pick(again.view(), all, tick, x * w, y * hgt, again.reach());
+            h.assertTrue(picked != null, "a click on a dot finds a satellite");
+            float[] at = again.view().at(net.createaerospace.client.globe.Spots.position(picked, tick));
+            h.assertTrue(Math.hypot(at[0] - spot.x(), at[1] - spot.y()) <= again.reach(), "the one under the click");
+            found++;
+        }
+        h.assertTrue(found > 0, "some dots are in front");
+        h.assertTrue(!map.contains(map.x0() - .01, map.y0()), "outside the globe square is not the map");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty")
     public static void aHundredSatellitesShareTheirOrbitsAndNamesDoNotOverlap(GameTestHelper h) {
         java.util.List<Satellite> all = new java.util.ArrayList<>();
         // 60 geostationary ones over the equator, and a constellation of 6 inclined planes of 10 low satellites each

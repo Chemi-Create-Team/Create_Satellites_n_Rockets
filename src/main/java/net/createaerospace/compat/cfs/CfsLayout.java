@@ -2,6 +2,7 @@ package net.createaerospace.compat.cfs;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.createaerospace.client.globe.CubeEarth;
 import net.createaerospace.orbit.SatelliteControl;
 
 /**
@@ -50,6 +51,29 @@ public final class CfsLayout {
         if (v == View.MAP) return new Rect(.03f + i * .18f, .88f, .20f + i * .18f, .96f);
         float left = .03f + (i % 5) * .19f, top = .66f + (i / 5) * .155f;
         return new Rect(left, top, left + .175f, top + .135f);
+    }
+
+    /**
+     * The globe on the map view of a canvas {@code w} by {@code h} (in the canvas's units): a square in the middle of {@link #MAP},
+     * seen from over the board ({@code homeLat}, {@code homeLon}, degrees; latitude kept within 40 degrees) turned {@code rot} steps
+     * of 45 degrees. The renderer draws with it and the server finds the clicked satellite with it.
+     */
+    public record MapView(CubeEarth.View view, float x0, float y0, float size, float k) {
+        public boolean contains(double x, double y) {
+            return x >= x0 && x < x0 + size && y >= y0 && y < y0 + size;
+        }
+
+        /** How far from a dot a click still picks it, in canvas units: a little over one tile of the Earth. */
+        public double reach() {
+            return k * 1.2;
+        }
+    }
+
+    public static MapView mapView(float w, float h, double homeLat, double homeLon, int rot) {
+        float aw = (MAP.r() - MAP.l()) * w, ah = (MAP.b() - MAP.t()) * h, size = Math.min(aw, ah) * .96f;
+        float x0 = MAP.l() * w + (aw - size) / 2, y0 = MAP.t() * h + (ah - size) / 2, k = size / 2f / CubeEarth.FIT;
+        return new MapView(new CubeEarth.View(Math.max(-40, Math.min(40, homeLat)), homeLon + 45 * rot, x0 + size / 2, y0 + size / 2, k),
+                x0, y0, size, k);
     }
 
     /** The tab or button at a point, or null. */

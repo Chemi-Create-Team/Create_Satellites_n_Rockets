@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.function.ToDoubleFunction;
 import net.createaerospace.client.globe.CubeEarth;
 import net.createaerospace.client.globe.Crowd;
+import net.createaerospace.client.globe.Spots;
+import net.createaerospace.client.globe.Spots.Spot;
 import net.createaerospace.client.globe.CubeEarth.Sink;
 import net.createaerospace.client.globe.CubeEarth.View;
 import net.createaerospace.orbit.OrbitMath;
@@ -30,8 +32,6 @@ public final class GlobeScene {
     /** A satellite name and where it goes on the screen. */
     public record Label(String name, float x, float y, boolean selected) {}
 
-    /** A satellite and where its dot is on the screen, and whether the Earth is in front of it. */
-    private record Spot(Satellite satellite, float x, float y, float depth, boolean hidden) {}
 
     private GlobeScene() {}
 
@@ -128,7 +128,7 @@ public final class GlobeScene {
                                      ToDoubleFunction<String> width, float dx, float right, float height, int max) {
         boolean crowded = all.size() > Crowd.CROWDED;
         List<Spot> spots = new ArrayList<>();
-        for (Spot spot : spots(v, all, tick)) {
+        for (Spot spot : Spots.of(v, all, tick)) {
             if (spot.hidden() || crowded && spot.satellite() != sel && spot.satellite() != hovered) continue;
             spots.add(spot);
         }
@@ -147,60 +147,19 @@ public final class GlobeScene {
 
     /** The satellite whose dot is nearest a point of the screen, within {@code reach} screen units; those in front first. Or null. */
     public static Satellite pick(View v, List<Satellite> all, double tick, double x, double y, double reach) {
-        Satellite best = null;
-        double bestScore = Double.MAX_VALUE;
-        for (Spot spot : spots(v, all, tick)) {
-            double d = Math.hypot(spot.x() - x, spot.y() - y);
-            if (d > reach) continue;
-            // a dot behind the Earth can be picked only where no dot in front is near
-            double score = d + (spot.hidden() ? reach * 2 : 0);
-            if (score < bestScore) {
-                bestScore = score;
-                best = spot.satellite();
-            }
-        }
-        return best;
-    }
-
-    private static List<Spot> spots(View v, List<Satellite> all, double tick) {
-        List<Spot> out = new ArrayList<>(all.size());
-        for (Satellite s : all) {
-            double[] p = position(s, tick);
-            float[] at = v.at(p);
-            out.add(new Spot(s, at[0], at[1], at[2], v.hidden(p)));
-        }
-        return out;
+        return Spots.pick(v, all, tick, x, y, reach);
     }
 
     private static double[] position(Satellite s, double tick) {
-        double[] sp = OrbitMath.subpoint(s, tick);
-        return CubeEarth.position(sp[0], sp[1], radius(s, tick));
+        return Spots.position(s, tick);
     }
 
     private static double[] ground(Satellite s, double tick) {
-        double[] sp = OrbitMath.subpoint(s, tick);
-        return CubeEarth.surface(sp[0], sp[1], 0);
+        return Spots.ground(s, tick);
     }
 
-    /**
-     * The drawn radius of the orbit's tier; on the way down, between the tiers by the real altitude, and under the lowest orbit down
-     * to the face of the cube under it.
-     */
     private static double radius(Satellite s, double tick) {
-        if (!s.reentering(tick)) return CubeEarth.orbitRadius(s.tier());
-        double alt = OrbitMath.altKm(s, tick);
-        if (alt <= OrbitMath.ALT_KM[0]) {
-            double[] sp = OrbitMath.subpoint(s, tick), g = CubeEarth.surface(sp[0], sp[1], 0);
-            double floor = Math.sqrt(g[0] * g[0] + g[1] * g[1] + g[2] * g[2]);
-            return floor + (CubeEarth.orbitRadius(0) - floor) * alt / OrbitMath.ALT_KM[0];
-        }
-        for (int i = 1; i < OrbitMath.ALT_KM.length; i++) {
-            if (alt <= OrbitMath.ALT_KM[i]) {
-                double f = (alt - OrbitMath.ALT_KM[i - 1]) / (OrbitMath.ALT_KM[i] - OrbitMath.ALT_KM[i - 1]);
-                return CubeEarth.orbitRadius(i - 1) + (CubeEarth.orbitRadius(i) - CubeEarth.orbitRadius(i - 1)) * f;
-            }
-        }
-        return CubeEarth.orbitRadius(OrbitMath.ALT_KM.length - 1);
+        return Spots.radius(s, tick);
     }
 
     /** The orbit as a circle; on the way down, the rest of the path to where it burns out. */

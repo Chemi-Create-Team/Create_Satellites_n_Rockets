@@ -50,8 +50,9 @@ configurations {
 }
 
 dependencies {
-    // Create: Frontier Science Control Computer app API v2, 0.3.26 (sha256 771a16ab...b2cce). CFS itself is an optional runtime mod.
-    compileOnly(files("libs/create-frontier-science-api-0.3.26.jar"))
+    // Create: Frontier Science Control Computer app API v3, 0.3.38 (sha256 e084d0a1...3991). CFS itself is an optional runtime mod;
+    // the v3 calls (canvas size, saved state) are only made when the running CFS reports API_VERSION 3 or more (CfsComputerApp.V3).
+    compileOnly(files("libs/create-frontier-science-api-0.3.38.jar"))
     createDistribution("maven.modrinth:create:${create_version_id}") { transitive = false }
     // Optional testing with real storage buses. The dish itself exposes the NeoForge item capability.
     if (providers.gradleProperty("withAE2").isPresent()) {

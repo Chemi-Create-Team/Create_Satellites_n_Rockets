@@ -100,19 +100,21 @@ public final class CfsCanvasRenderer {
         float w = c.width(), h = c.height();
         Rect area = CfsLayout.MAP;
         box(g, w, h, area, -.003f, 0xFF03060C, BLUE);
-        // the Earth fits a square in the middle of the area, small under the geostationary circle at the edge
-        float aw = (area.r() - area.l()) * w, ah = (area.b() - area.t()) * h, size = Math.min(aw, ah) * .96f;
-        float x0 = area.l() * w + (aw - size) / 2, y0 = area.t() * h + (ah - size) / 2;
-        float k = size / 2f / CubeEarth.FIT, zs = .2f;
+        // the Earth fits a square in the middle of the area, seen from over the board and turned by the buttons; the server finds
+        // a clicked dot with the same view (CfsLayout.mapView)
         double homeLat = OrbitMath.latOf(c.boardPos().getZ()), homeLon = OrbitMath.lonOf(c.boardPos().getX());
-        // over the board by default; the turn buttons add steps of 45 degrees
-        var view = new CubeEarth.View(Math.max(-40, Math.min(40, homeLat)), homeLon + 45 * c.data().getInt("Rot"), x0 + size / 2, y0 + size / 2, k);
+        var map = CfsLayout.mapView(w, h, homeLat, homeLon, c.data().getInt("Rot"));
+        var view = map.view();
+        float x0 = map.x0(), y0 = map.y0(), size = map.size(), k = map.k(), zs = .2f;
+        // the dot under the pointer: its name shows, and with CFS 0.3.38 or newer a click selects it
+        double px = c.pointerX() * w, py = c.pointerY() * h;
+        Satellite hovered = c.pointerX() >= 0 && map.contains(px, py) ? GlobeScene.pick(view, all, tick, px, py, map.reach()) : null;
         var sink = Globes.sink(c.buffers().getBuffer(RenderType.debugQuads()), c.pose().last().pose(), -(CubeEarth.DEPTH + 2) * k * zs, -zs);
         GlobeScene.draw(sink, view, all, sel, tick, homeLat, homeLon, x0, y0, x0 + size, y0 + size, k * .2f, -CubeEarth.DEPTH * k);
         float lh = size * .035f;
         // the names that do not cover each other, the selected one first; a name is about half as wide per letter as it is high
         java.util.function.ToDoubleFunction<String> nameWidth = n -> Math.min(size * .3f, n.length() * lh * .6f);
-        for (var label : GlobeScene.labels(view, all, sel, null, tick, nameWidth, k * .9f, x0 + size, lh * 1.1f, 16)) {
+        for (var label : GlobeScene.labels(view, all, sel, hovered, tick, nameWidth, k * .9f, x0 + size, lh * 1.1f, 16)) {
             g.text(Component.literal(label.name()), label.x(), label.y() - lh * .55f, (float) nameWidth.applyAsDouble(label.name()), lh * 1.1f, -.3f, 0,
                     label.selected() ? YELLOW : 0xFFE0E0E0);
         }

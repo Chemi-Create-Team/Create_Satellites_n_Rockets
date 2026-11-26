@@ -49,7 +49,8 @@ Minecraft **1.21.1**, NeoForge, Java **21**. The required and optional mods are 
 - **The night sky**. Every satellite above your horizon is a moving dot, seen from where you stand; a geostationary one stays in
   one place. [The sky](docs/orbit.md#夜空)
 - **Control Computer**. With [Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science) 0.3.32 or
-  newer, the console's controls and map are also the **Satellites** app of its display boards. Optional.
+  newer, the console's controls and map are also the **Satellites** app of its display boards. Optional. With CFS 0.3.38 or newer
+  a click on a dot of the map selects that satellite, and each display keeps its tab, turn and selection through restarts.
   [Control Computer](docs/control-computer.md)
 - **API for other mods**. Other mods register their own items as satellite payloads or as rockets, and read the satellites'
   positions and data to build a GPS or a relay. Both sides stay optional. [API](docs/api.md)
