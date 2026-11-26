@@ -1,6 +1,6 @@
 # Create: Aerospace Engineering
 
-[English](README.md) | **日本語**
+[English](README.md) | **日本語** · [変更履歴](CHANGELOG.md) · [詳しい仕様](docs/README.md)
 
 発射台からロケットを打ち上げ、人工衛星を軌道に乗せ、地上管制コンソールで衛星を探して操作し、夜空を横切る様子を眺めるMODです。
 [Create](https://modrinth.com/mod/create) が必要です。

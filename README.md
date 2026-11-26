@@ -1,6 +1,6 @@
 # Create: Aerospace Engineering
 
-**English** | [日本語](README.ja.md)
+**English** | [日本語](README.ja.md) · [Changelog](CHANGELOG.md) · [Specifications (Japanese)](docs/README.md)
 
 Launch rockets from a pad, put satellites into orbit, find and command them from a ground control console, and watch them cross
 the night sky. Needs [Create](https://modrinth.com/mod/create); fuels from
