@@ -1,10 +1,10 @@
-# Create: Aerospace Engineering 0.1.17
+# Create: Aerospace Engineering 0.1.18
 
-[配布JAR](create-aerospace-engineering-0.1.17.jar) · [開発用API JAR](create-aerospace-engineering-api-0.1.17.jar) · [SHA-256](SHA256SUMS) · [変更履歴](../CHANGELOG.md) · [現行仕様](../docs/README.md)
+[配布JAR](create-aerospace-engineering-0.1.18.jar) · [開発用API JAR](create-aerospace-engineering-api-0.1.17.jar) · [SHA-256](SHA256SUMS) · [変更履歴](../CHANGELOG.md) · [現行仕様](../docs/README.md)
 
 クライアントとサーバーの両方を同じ版に更新し、旧CAE JARをmodsから取り除いてください。開発用API JARは、外部MODが `compileOnly` で使うものです。
 
-0.1.17では、衛星を放出したあと第1段が発射台に帰ってくるファルコン9と、それを整備する整備ガントリーを追加しました。外部MODも `RocketType.recovery` で再使用ロケットを作れます（`API_VERSION` 6）。0.1.15では、1機のロケットに何人かで積んだペイロードがそれぞれ積んだ人の衛星になり、衛星写真は通信衛星の持ち主かOPだけが撮れるようになりました（ゲームルール `caeSatellitePhotos` で停止可）。写真の保存済みチャンクは専用の低優先度スレッドで読み、サーバーのチャンク読み込みを待たせません。0.1.14では、傾斜角を変えても衛星の真下の地点が変わらないようにし、再突入の火球が出る瞬間のクライアントのクラッシュと、共通制御コンピュータのアプリで放棄が確認なしに実行される不具合を直しました。[変更履歴](../CHANGELOG.md)
+0.1.18では、ファルコン9の打ち上げ失敗の確率をほかのロケットと同じ3%にしました。0.1.17では、衛星を放出したあと第1段が発射台に帰ってくるファルコン9と、それを整備する整備ガントリーを追加しました。外部MODも `RocketType.recovery` で再使用ロケットを作れます（`API_VERSION` 6）。0.1.15では、1機のロケットに何人かで積んだペイロードがそれぞれ積んだ人の衛星になり、衛星写真は通信衛星の持ち主かOPだけが撮れるようになりました（ゲームルール `caeSatellitePhotos` で停止可）。写真の保存済みチャンクは専用の低優先度スレッドで読み、サーバーのチャンク読み込みを待たせません。0.1.14では、傾斜角を変えても衛星の真下の地点が変わらないようにし、再突入の火球が出る瞬間のクライアントのクラッシュと、共通制御コンピュータのアプリで放棄が確認なしに実行される不具合を直しました。[変更履歴](../CHANGELOG.md)
 
 ## 必須環境
 

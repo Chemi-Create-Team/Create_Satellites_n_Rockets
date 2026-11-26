@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>
  * Payload: 5.5 t, the GTO capacity with the first stage recovered (CAE puts satellites in geostationary orbit; the real rocket lands
  * a GTO booster on a drone ship, here it flies back to its pad as the user asked). Fuel from the lift-off mass (549 t against the
- * 575 t of the H3-24W, which fills the pad's 8000 mB); acceleration from the lift-off thrust-to-weight of 1.4. Failure chance 0.5%
+ * 575 t of the H3-24W, which fills the pad's 8000 mB); acceleration from the lift-off thrust-to-weight of 1.4. Failure chance: the CAE default of 3%
  * (two lost flights in some 500). Recovery: 30% of first stages do not come back, 10% crash on landing (user's numbers).
  */
 public final class Falcon9 {
@@ -75,7 +75,7 @@ public final class Falcon9 {
 
     public static RocketApi.RocketType type() {
         return new RocketApi.RocketType(Component.translatable("item.create_aerospace_engineering.falcon_9"), 5500, 7640, (int) CLIMB,
-                ACCELERATION, TOP_SPEED, (float) FAIRING_D, (float) LENGTH, 0.005, new RocketApi.Recovery(0.3, 0.1));
+                ACCELERATION, TOP_SPEED, (float) FAIRING_D, (float) LENGTH, RocketApi.RocketType.DEFAULT_FAILURE_CHANCE, new RocketApi.Recovery(0.3, 0.1));
     }
 
     public static void register(Item item) {
