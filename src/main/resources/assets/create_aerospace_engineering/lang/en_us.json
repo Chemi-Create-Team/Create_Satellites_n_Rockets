@@ -84,5 +84,18 @@
   "computer.create_aerospace_engineering.status_state": "%s  %s",
   "message.create_aerospace_engineering.launch_failed": "Launch failure: the %s exploded with %s payloads.",
   "command.create_aerospace_engineering.reentering": "%s satellite(s) reentering over here.",
-  "command.create_aerospace_engineering.abandoned": "%s satellite(s) abandoned."
+  "command.create_aerospace_engineering.abandoned": "%s satellite(s) abandoned.",
+  "item.create_aerospace_engineering.communication_satellite": "Communications Satellite",
+  "block.create_frontier_science.me_parabolic_antenna": "Large Satellite Dish",
+  "relay.create_aerospace_engineering.unbound": "No satellite selected. Sneak-use to tune.",
+  "relay.create_aerospace_engineering.none": "No communications satellite available to you.",
+  "relay.create_aerospace_engineering.denied": "This dish is owned by another player.",
+  "relay.create_aerospace_engineering.linked": "Linked to %s",
+  "relay.create_aerospace_engineering.out_of_view": "%s is below the horizon or outside coverage.",
+  "relay.create_aerospace_engineering.recovery": "%s has deorbited. Withdraw remaining items.",
+  "photo.create_aerospace_engineering.title": "Satellite Photo",
+  "photo.create_aerospace_engineering.take": "Satellite photo",
+  "photo.create_aerospace_engineering.coordinates": "%1$s  |  X %2$s  Z %3$s  |  %4$s × %4$s blocks",
+  "photo.create_aerospace_engineering.unavailable": "Select a communications satellite above the horizon.",
+  "photo.create_aerospace_engineering.busy": "The satellite is taking another photo."
 }

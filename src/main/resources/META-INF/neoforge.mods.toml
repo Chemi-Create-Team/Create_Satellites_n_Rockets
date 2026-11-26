@@ -42,6 +42,6 @@ side = "BOTH"
 [[dependencies."${mod_id}"]]
 modId = "create_frontier_science"
 type = "optional"
-versionRange = "[0.3.26,)"
+versionRange = "[0.3.32,)"
 ordering = "AFTER"
 side = "BOTH"

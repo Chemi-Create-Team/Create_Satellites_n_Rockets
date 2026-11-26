@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "create_aerospace_engineering:launch_pad",
-    "create_aerospace_engineering:ground_console"
+    "create_aerospace_engineering:ground_console",
+    "create_frontier_science:me_parabolic_antenna"
   ]
 }

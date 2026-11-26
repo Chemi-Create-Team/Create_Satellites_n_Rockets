@@ -63,9 +63,13 @@ Orbit periods are scaled to the game: the lowest orbit takes 2 minutes, the high
 At night every satellite above the horizon is a bright dot (a trail too, when it moves); **beacon** is steady, **flash** blinks, **standby**
 is dim. You see them from the spot where you stand. A geostationary satellite stays at one place in the sky; a low one crosses it in about ten seconds.
 
+## Satellite relays and photos
+
+Load a communications satellite into a rocket, tune two Large Satellite Dishes to it, and connect each pedestal to its ME network with an AE2 Storage Bus. The ground console's map can also take a top-down photo of the actual terrain around the console. The large dish keeps its Frontier Science block ID after moving to this mod. [Setup and migration](docs/satellite-relay.md)
+
 ## Control Computer (Create: Frontier Science)
 
-If [Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science) 0.3.26 or newer is installed, the ground
+If [Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science) 0.3.32 or newer is installed, the ground
 console is also an app of its Control Computer: open **Extra apps** on a display board and pick **Satellites**. It is optional;
 without Frontier Science nothing changes.
 

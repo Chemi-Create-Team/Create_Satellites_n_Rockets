@@ -1,6 +1,6 @@
 # 共通制御コンピュータ（Create: Frontier Science）
 
-[Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science)（CFS）0.3.26以降が入っていると、地上管制コンソールは共通制御コンピュータの「追加アプリ」の**人工衛星**としても使えます。導入は任意です。CFSがないか、キャンバスAPIのない古いCFSでは、何も追加しません。
+[Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science)（CFS）0.3.32以降が入っていると、地上管制コンソールは共通制御コンピュータの「追加アプリ」の**人工衛星**としても使えます。導入は任意です。CFSがないか、キャンバスAPIのない古いCFSでは、何も追加しません。
 
 ## 開き方
 

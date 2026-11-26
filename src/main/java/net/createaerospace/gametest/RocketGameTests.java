@@ -68,7 +68,12 @@ public class RocketGameTests {
     @GameTest(template = "test_empty", batch = "rocket_launch", timeoutTicks = 400)
     public static void redstoneFiresTheRocketAndItLeavesASatelliteInOrbit(GameTestHelper h) {
         Player p = h.makeMockPlayer(GameType.SURVIVAL);
-        loadRocket(h, p);
+        noRandomFailures(h);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get());
+        use(h, p, new ItemStack(CreateAerospace.ROCKET_ITEM.get()));
+        ItemStack payload = new ItemStack(CreateAerospace.COMMUNICATION_SATELLITE.get());
+        use(h, p, payload);
+        h.assertTrue(payload.isEmpty(), "The rocket takes the communications satellite");
         h.assertTrue(rockets(h).size() == 1 && !rockets(h).get(0).isAscending(), "a rocket stands on the pad");
         var tank = ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank;
         h.assertTrue(tank.fill(new FluidStack(Fluids.LAVA, 4000), IFluidHandler.FluidAction.EXECUTE) == 4000, "pad takes lava");
@@ -82,6 +87,7 @@ public class RocketGameTests {
             h.assertTrue(rockets(h).isEmpty(), "the rocket is gone once it has released its satellite");
             h.assertTrue(mine(h, p) == 1, "exactly one satellite belongs to the loader, got " + mine(h, p));
             var s = SatelliteData.get(h.getLevel().getServer()).list().stream().filter(x -> x.owner().equals(p.getUUID())).findFirst().get();
+            h.assertTrue(s.payload().equals(CreateAerospace.COMMUNICATION_PAYLOAD.toString()), "The deployed satellite is a communications relay");
             SatelliteData.get(h.getLevel().getServer()).remove(h.getLevel().getServer(), s.id());
         });
     }

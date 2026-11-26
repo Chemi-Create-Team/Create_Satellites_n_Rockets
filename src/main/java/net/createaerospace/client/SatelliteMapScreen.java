@@ -7,12 +7,16 @@ import net.createaerospace.client.globe.VoxelGlobe;
 import net.createaerospace.orbit.OrbitMath;
 import net.createaerospace.orbit.Satellite;
 import net.createaerospace.orbit.SatelliteReadout;
+import net.createaerospace.photo.PhotoPackets;
+import net.createaerospace.relay.RelayStorage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * A mission control wall: the Earth as a sphere of cubes with the satellites over it in the middle (drag to turn it), the list of
@@ -26,12 +30,27 @@ public class SatelliteMapScreen extends Screen {
     private final BlockPos console;
     /** The point of the Earth in the middle, in degrees. Starts over the console. */
     private double viewLat, viewLon;
+    private Button photo;
 
     public SatelliteMapScreen(BlockPos console) {
         super(Component.translatable("screen.create_aerospace_engineering.map"));
         this.console = console;
         viewLat = Math.max(-40, Math.min(40, OrbitMath.latOf(console.getZ())));
         viewLon = OrbitMath.lonOf(console.getX());
+    }
+
+    BlockPos console() {
+        return console;
+    }
+
+    @Override
+    protected void init() {
+        photo = addRenderableWidget(Button.builder(Component.translatable("photo.create_aerospace_engineering.take"), b -> {
+            if (minecraft.level != null && minecraft.level.getBlockEntity(console) instanceof GroundConsoleBlockEntity c
+                    && c.selected() != null) {
+                PacketDistributor.sendToServer(new PhotoPackets.Request(console, c.selected().id()));
+            }
+        }).bounds((width - 108) / 2, height - 22, 108, 18).build());
     }
 
     @Override
@@ -47,8 +66,8 @@ public class SatelliteMapScreen extends Screen {
         int leftW = sides ? LEFT : 0, rightW = sides ? RIGHT : 0, gap = sides ? GAP : 0;
         int areaX = MARGIN + leftW + gap, areaW = width - 2 * MARGIN - leftW - rightW - 2 * gap;
         int top = MARGIN + BAR + 4;
-        int size = Math.max(60, Math.min(areaW - 8, height - top - 44)) & ~1;
-        top += Math.max(0, (height - MARGIN - (top + size + 44)) / 2);
+        int size = Math.max(48, Math.min(areaW - 8, height - top - 65)) & ~1;
+        top += Math.max(0, (height - MARGIN - (top + size + 65)) / 2);
         int x0 = areaX + (areaW - size) / 2, y0 = top + 3;
 
         // title bar with the clock and the satellite count in amber, like the counters over a mission control wall
@@ -115,6 +134,8 @@ public class SatelliteMapScreen extends Screen {
         }
         fit(g, Component.translatable("screen.create_aerospace_engineering.legend"), areaX, ty + 11, areaW, DIM, true);
 
+        photo.active = !RelayStorage.retired(sel) && RelayStorage.isRelay(sel);
+        photo.render(g, mx, my, pt);
         if (!sides) return;
         // left: every satellite, the selected one lit
         int py = y0 - 3, ph = size + 6;
