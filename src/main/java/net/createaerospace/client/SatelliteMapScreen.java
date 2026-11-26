@@ -19,8 +19,8 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * A mission control wall: the Earth as a cube of 16 by 16 tiles a face with the satellites as dots and their orbits as lines in the
- * middle (drag to turn it), the list of
+ * A mission control wall: the Earth as a cube of 8 by 8 tiles a face under drifting clouds, with the satellites as dots and their
+ * orbits as circles, in the middle (drag to turn it), the list of
  * satellites on the left and the readout of the selected one on the right. One degree is 1000 blocks, so the readout also gives the
  * block position under the satellite. The land comes from {@code textures/gui/land_mask.png}, Natural Earth, public domain.
  */

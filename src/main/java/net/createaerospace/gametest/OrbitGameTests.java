@@ -266,7 +266,7 @@ public class OrbitGameTests {
         land.drawEarth((a, b, c, d, e, f, g, i, j, k, l, m, argb) -> landQuads[0]++, view);
         int n = net.createaerospace.client.globe.CubeEarth.N;
         float half = net.createaerospace.client.globe.CubeEarth.HALF;
-        // seen from 10N 20E, the faces towards 0E, 90E and the north pole show: three faces of 16 by 16 tiles, land or sea alike
+        // seen from 10N 20E, the faces towards 0E, 90E and the north pole show: three faces of 8 by 8 tiles, land or sea alike
         h.assertTrue(seaQuads[0] == 3 * n * n, "three faces of tiles show, got " + seaQuads[0]);
         h.assertTrue(landQuads[0] == seaQuads[0], "land is as flat as the sea, got " + landQuads[0]);
         // the point in the middle of the view is on the near side; its opposite is behind the Earth
@@ -276,19 +276,33 @@ public class OrbitGameTests {
         // a point far to the side of the cube is not behind it, even on the far half
         var beside = net.createaerospace.client.globe.CubeEarth.position(0, Math.toRadians(110), net.createaerospace.client.globe.CubeEarth.orbitRadius(3));
         h.assertTrue(!view.hidden(beside), "a geostationary satellite beside the Earth shows");
-        // every orbit is a cube-shaped shell outside the Earth, higher for each tier, so no line runs through the cube
-        double last = half;
+        // every orbit is a circle wider than the corners of the cube and its clouds, larger for each tier, and inside the view
+        double last = net.createaerospace.client.globe.CubeEarth.CORNER * (half + net.createaerospace.client.globe.CubeEarth.CLOUD_LIFT) / half;
         for (int tier = 0; tier < OrbitMath.ALT_KM.length; tier++) {
             double r = net.createaerospace.client.globe.CubeEarth.orbitRadius(tier);
-            h.assertTrue(r > last, "tier " + tier + " is above the one under it");
-            for (int lat = -85; lat <= 85; lat += 17) for (int lon = -180; lon < 180; lon += 23) {
-                var p = net.createaerospace.client.globe.CubeEarth.position(Math.toRadians(lat), Math.toRadians(lon), r);
-                double m = Math.max(Math.abs(p[0]), Math.max(Math.abs(p[1]), Math.abs(p[2])));
-                h.assertTrue(Math.abs(m - r) < 1e-9, "tier " + tier + " keeps its height over " + lat + ", " + lon);
-            }
+            h.assertTrue(r > last, "tier " + tier + " is outside the one under it");
             last = r;
         }
-        // the ring of an inclined orbit closes after one turn and starts at the satellite
+        h.assertTrue(last < net.createaerospace.client.globe.CubeEarth.FIT, "the geostationary circle fits the view");
+        // the ground under a point is on a face of the cube
+        var g = net.createaerospace.client.globe.CubeEarth.surface(Math.toRadians(33), Math.toRadians(-71), 0);
+        h.assertTrue(Math.abs(Math.max(Math.abs(g[0]), Math.max(Math.abs(g[1]), Math.abs(g[2]))) - half) < 1e-9, "the ground is on a face");
+        // clouds cover some of the sky, not none and not all, and move with time
+        int cloudy = 0, cells = 0, changed = 0;
+        for (int lat = -80; lat <= 80; lat += 10) for (int lon = -180; lon < 180; lon += 10) {
+            double a = net.createaerospace.client.globe.CubeEarth.cloudiness(Math.toRadians(lat), Math.toRadians(lon), 1000);
+            double b = net.createaerospace.client.globe.CubeEarth.cloudiness(Math.toRadians(lat), Math.toRadians(lon), 7000);
+            boolean ca = a >= net.createaerospace.client.globe.CubeEarth.CLOUD_EDGE;
+            cells++;
+            if (ca) cloudy++;
+            if (ca != b >= net.createaerospace.client.globe.CubeEarth.CLOUD_EDGE) changed++;
+        }
+        h.assertTrue(cloudy > cells / 6 && cloudy < cells / 2, "clouds cover part of the sky, got " + cloudy + " of " + cells);
+        h.assertTrue(changed > cells / 20, "clouds move, " + changed + " cells changed");
+        int[] cloudQuads = {0};
+        land.drawClouds((a, b, c, d, e, f, gg, i, j, k, l, m, argb) -> cloudQuads[0]++, view, 1000);
+        h.assertTrue(cloudQuads[0] > 0 && cloudQuads[0] < seaQuads[0], "some tiles in view are cloudy, got " + cloudQuads[0]);
+        // the circle of an inclined orbit closes after one turn and starts at the satellite
         var s = new Satellite(UUID.randomUUID(), "ring", UUID.randomUUID(), "", 0, 2, 1.1, .4, 0, Satellite.BEACON);
         double[] at = OrbitMath.subpoint(s, 777), start = OrbitMath.orbitPoint(s, 777, 0), round = OrbitMath.orbitPoint(s, 777, 2 * Math.PI);
         h.assertTrue(Math.abs(at[0] - start[0]) < 1e-9 && Math.abs(at[1] - start[1]) < 1e-9, "the ring starts at the satellite");

@@ -1,31 +1,36 @@
 package net.createaerospace.client.globe;
 
 /**
- * The Earth as an abstract cube: six flat faces of 16 by 16 tiles, sea, land and ice, like a map of big pixels. Satellites are dots
- * over it and their orbits are lines. Orbits are shells of the same cube shape, so a satellite keeps the same height over the face it
- * is over and an orbit never cuts through the Earth. Pure geometry with no Minecraft types: it hands coloured quads to a {@link Sink},
- * so the Control Computer app, the map screen and a plain test program can all draw it.
+ * The Earth as an abstract cube: six flat faces of 8 by 8 tiles, sea, land and ice, like a map of big pixels, under a layer of
+ * drifting clouds of the same tiles. Satellites are dots over it and their orbits are circles, all wider than the corners of the cube,
+ * so no orbit cuts through the Earth. Pure geometry with no Minecraft types: it hands coloured quads to a {@link Sink}, so the Control
+ * Computer app, the map screen and a plain test program can all draw it.
  * <p>
  * Earth-fixed axes: x towards latitude 0 / longitude 0, y north, z towards longitude 90E. The view looks at one point of the Earth, with
  * east to the right and north up. Depth is larger towards the viewer.
  */
 public final class CubeEarth {
     /** Tiles along each edge of a face. */
-    public static final int N = 16;
+    public static final int N = 8;
     /** Half the edge of the cube, in tiles: the faces are at plus and minus this. */
     public static final float HALF = N / 2f;
-    /**
-     * Half the width of the view in tiles. A geostationary orbit is a square ring {@code 2 HALF} out, so its corners reach
-     * {@code 2 HALF} times the square root of 2. ponytail: an inclined high orbit through a corner of its shell can reach
-     * {@code 2 HALF} times the square root of 3 and pokes a little out of the view; the map screen clips it, the computer app does not.
-     */
-    public static final float FIT = 2.9f * HALF;
+    /** The corners of the cube are this far from the centre: the lowest orbit has to clear them. */
+    public static final double CORNER = HALF * Math.sqrt(3);
+    /** Half the width of the view in tiles: the geostationary circle and the dots on it. */
+    public static final float FIT = 16;
     /** Further from the viewer than anything but the stars, in tiles. */
-    public static final float DEPTH = 30;
+    public static final float DEPTH = 17;
+    /** The clouds float this far over the faces, in tiles. */
+    public static final float CLOUD_LIFT = .25f;
+    /** Clouds go once round the Earth eastwards in this many ticks (three days), changing shape as they go. */
+    public static final double CLOUD_TICKS = 72000;
     private static final float[] LIGHT = normalize(-.45f, .55f, .7f);
     private static final float AMBIENT = .58f, DIFFUSE = .42f;
-    /** Drawn heights of the four orbit tiers, in Earth half-widths. Not to scale: a geostationary satellite would be 6.6 Earth radii away. */
-    private static final double[] SHELLS = {1.2, 1.4, 1.7, 2.0};
+    /**
+     * Radii of the four orbit circles, in tiles. Not to scale (a geostationary satellite would be 6.6 Earth radii away): the low orbit
+     * just clears the corners of the cube and the geostationary one is at the edge of the view.
+     */
+    private static final double[] ORBITS = {7.6, 9.2, 11.8, 15};
 
     /** A coloured quad in screen units (x right, y down) with a depth for each corner. */
     public interface Sink {
@@ -38,7 +43,9 @@ public final class CubeEarth {
 
     private static final int[][] DIRS = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
     /** For each face, the corners of its tiles (twelve numbers per tile) and their colours. */
-    private final float[][] corners = new float[6][N * N * 12];
+    private final float[][] corners = new float[6][N * N * 12], cloudCorners = new float[6][N * N * 12];
+    /** Latitude and longitude of the middle of each tile, in radians, two numbers per tile. */
+    private final double[][] middles = new double[6][N * N * 2];
     private final int[][] colors = new int[6][N * N];
 
     public CubeEarth(Land land) {
@@ -47,14 +54,16 @@ public final class CubeEarth {
             int ax = axis(d), a = (ax + 1) % 3, b = (ax + 2) % 3;
             for (int i = 0; i < N; i++) for (int j = 0; j < N; j++) {
                 int t = i * N + j;
-                // a tile is land when most of it is: four by four looks into the mask
+                // a tile is land when most of it is: six by six looks into the mask
                 int count = 0;
-                for (int si = 0; si < 4; si++) for (int sj = 0; sj < 4; sj++) {
-                    double[] ll = latLon(d, ax, a, b, -HALF + i + (si + .5) / 4, -HALF + j + (sj + .5) / 4);
+                for (int si = 0; si < 6; si++) for (int sj = 0; sj < 6; sj++) {
+                    double[] ll = latLon(d, ax, a, b, -HALF + i + (si + .5) / 6, -HALF + j + (sj + .5) / 6);
                     if (land.at(ll[0], ll[1])) count++;
                 }
-                double lat = latLon(d, ax, a, b, -HALF + i + .5, -HALF + j + .5)[0];
-                colors[dir][t] = color(lat, count >= 8, (i + j & 1) == 0, hash(dir, i, j));
+                double[] mid = latLon(d, ax, a, b, -HALF + i + .5, -HALF + j + .5);
+                middles[dir][t * 2] = Math.toRadians(mid[0]);
+                middles[dir][t * 2 + 1] = Math.toRadians(mid[1]);
+                colors[dir][t] = color(mid[0], count >= 18, (i + j & 1) == 0, hash(dir, i, j));
                 float[][] s = {{i, j}, {i + 1, j}, {i + 1, j + 1}, {i, j + 1}};
                 for (int k = 0; k < 4; k++) {
                     float[] pt = new float[3];
@@ -62,6 +71,9 @@ public final class CubeEarth {
                     pt[a] = -HALF + s[k][0];
                     pt[b] = -HALF + s[k][1];
                     System.arraycopy(pt, 0, corners[dir], t * 12 + k * 3, 3);
+                    // the cloud tile over it, on a cube a little larger
+                    float f = (HALF + CLOUD_LIFT) / HALF;
+                    for (int q = 0; q < 3; q++) cloudCorners[dir][t * 12 + k * 3 + q] = pt[q] * f;
                 }
             }
         }
@@ -158,19 +170,58 @@ public final class CubeEarth {
         }
     }
 
-    /**
-     * A point over a latitude and longitude (radians), on the cube-shaped shell {@code shell} tiles out from the centre (the faces of
-     * the Earth are the shell {@link #HALF}), along the Earth-fixed axes.
-     */
-    public static double[] position(double lat, double lon, double shell) {
+    /** A point over a latitude and longitude (radians), {@code radius} tiles from the centre, along the Earth-fixed axes. */
+    public static double[] position(double lat, double lon, double radius) {
+        return new double[] {radius * Math.cos(lat) * Math.cos(lon), radius * Math.sin(lat), radius * Math.cos(lat) * Math.sin(lon)};
+    }
+
+    /** The point of the cube's surface over a latitude and longitude (radians), raised {@code lift} tiles off its face. */
+    public static double[] surface(double lat, double lon, double lift) {
         double x = Math.cos(lat) * Math.cos(lon), y = Math.sin(lat), z = Math.cos(lat) * Math.sin(lon);
-        double f = shell / Math.max(Math.abs(x), Math.max(Math.abs(y), Math.abs(z)));
+        double f = (HALF + lift) / Math.max(Math.abs(x), Math.max(Math.abs(y), Math.abs(z)));
         return new double[] {x * f, y * f, z * f};
     }
 
-    /** The shell of an orbit tier, in tiles. */
+    /** The radius of an orbit tier's circle, in tiles. */
     public static double orbitRadius(int tier) {
-        return HALF * SHELLS[Math.max(0, Math.min(SHELLS.length - 1, tier))];
+        return ORBITS[Math.max(0, Math.min(ORBITS.length - 1, tier))];
+    }
+
+    /**
+     * How cloudy it is over a point (radians) at a time, from about -1 to 1; cloud where it is above {@link #CLOUD_EDGE}. Waves whose
+     * longitude terms are whole multiples, so there is no seam, moving eastwards and slowly changing shape, with fewer clouds at the
+     * poles and the subtropics than at the equator and in the mid-latitudes, as on the real Earth.
+     */
+    public static double cloudiness(double lat, double lon, double tick) {
+        double l = lon - 2 * Math.PI * tick / CLOUD_TICKS, t = tick / CLOUD_TICKS * 2 * Math.PI;
+        double w = Math.sin(3 * lat + 1.3 * Math.sin(2 * l + t)) * Math.cos(2 * l - 1.7 * lat + .7 * t)
+                + .55 * Math.sin(5 * l + 4 * lat - 1.9 * t) + .35 * Math.cos(7 * l - 3 * lat + 1.3 * t);
+        double band = .25 * Math.cos(6 * lat) - .15;
+        return w * .6 + band;
+    }
+
+    public static final double CLOUD_EDGE = .15;
+
+    /** The cloud tiles on the faces that look towards the viewer: white, half see-through, lit like the faces under them. */
+    public void drawClouds(Sink sink, View v, double tick) {
+        for (int dir = 0; dir < 6; dir++) {
+            int[] d = DIRS[dir];
+            float nx = d[0] * v.e[0] + d[1] * v.e[1] + d[2] * v.e[2], ny = d[0] * v.n[0] + d[1] * v.n[1] + d[2] * v.n[2];
+            float nz = d[0] * v.p[0] + d[1] * v.p[1] + d[2] * v.p[2];
+            if (nz < .02f) continue;
+            float shade = AMBIENT + DIFFUSE * Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]);
+            float[] c = cloudCorners[dir];
+            for (int t = 0; t < N * N; t++) {
+                double cloud = cloudiness(middles[dir][t * 2], middles[dir][t * 2 + 1], tick);
+                if (cloud < CLOUD_EDGE) continue;
+                // thick cloud is whiter and less see-through
+                int alpha = cloud > CLOUD_EDGE + .3 ? 0xD0 : 0x98;
+                int o = t * 12;
+                float[] q0 = v.project(c[o], c[o + 1], c[o + 2]), q1 = v.project(c[o + 3], c[o + 4], c[o + 5]);
+                float[] q2 = v.project(c[o + 6], c[o + 7], c[o + 8]), q3 = v.project(c[o + 9], c[o + 10], c[o + 11]);
+                sink.quad(q0[0], q0[1], q0[2], q1[0], q1[1], q1[2], q2[0], q2[1], q2[2], q3[0], q3[1], q3[2], mul(alpha << 24 | 0xF4F8FF, shade));
+            }
+        }
     }
 
     /** The faces that look towards the viewer, tile by tile, each face lit by a fixed light from the upper left. */
