@@ -24,7 +24,7 @@ public final class RocketApi {
     public static final ResourceLocation STANDARD = ResourceLocation.fromNamespaceAndPath("create_aerospace_engineering", "rocket");
     /** The pad holds this much fuel, so no rocket can burn more in one launch. */
     public static final int MAX_FUEL_MB = 8000;
-    public static final int MAX_WIDTH = 10, MAX_HEIGHT = 60;
+    public static final int MAX_WIDTH = 16, MAX_HEIGHT = 100;
 
     private static final Map<ResourceLocation, Registered> TYPES = new HashMap<>();
     private static final Map<Item, ResourceLocation> ITEMS = new HashMap<>();

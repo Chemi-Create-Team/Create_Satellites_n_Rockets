@@ -15,7 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * JAXA / MHI's H3 in its three flown configurations, at half scale (1 block = 2 m). Registered through {@link RocketApi} like any
+ * JAXA / MHI's H3 in its three flown configurations, at full size (1 block = 1 m). Registered through {@link RocketApi} like any
  * rocket of another mod; drawn by {@code client.H3Renderer}. All lengths here are real metres.
  * <p>
  * Payload: GTO capacity (CAE puts satellites in geostationary orbit) for 22S (4.8 t, flight 5) and 24W (6.5 t, planned long-coast
@@ -23,7 +23,7 @@ import net.minecraft.world.item.ItemStack;
  * pad), acceleration with lift-off thrust over weight.
  */
 public final class H3 {
-    public static final double SCALE = 0.5;
+    public static final double SCALE = 1;
     /** Diameter of the core and of the S fairing; W fairing; SRB-3. */
     public static final double CORE_D = 5.2, WIDE_D = 5.4, SRB_D = 2.5;
     /** Overall length with the short and the long (W) fairing. */

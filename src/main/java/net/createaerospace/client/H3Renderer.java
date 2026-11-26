@@ -55,14 +55,20 @@ public final class H3Renderer implements RocketRenderers.Renderer {
 
     private static void band(VertexConsumer vc, PoseStack.Pose pose, double cx, double cz, double y0, double r0, double y1, double r1,
                              double a0, double a1, int color, int light) {
+        band(vc, pose, cx, cz, y0, r0, y1, r1, a0, a1, color, color, light);
+    }
+
+    /** {@code color0} at the y0 ring, {@code color1} at the y1 ring; flames fade to clear at their tip this way. */
+    private static void band(VertexConsumer vc, PoseStack.Pose pose, double cx, double cz, double y0, double r0, double y1, double r1,
+                             double a0, double a1, int color0, int color1, int light) {
         int n = Math.max(2, (int) Math.ceil(SEG * (a1 - a0) / (2 * Math.PI)));
         double dy = y1 - y0, dr = r0 - r1;
         for (int k = 0; k < n; k++) {
             double b0 = a0 + (a1 - a0) * k / n, b1 = a0 + (a1 - a0) * (k + 1) / n;
-            vertex(vc, pose, cx, cz, y0, r0, b0, dy, dr, color, light);
-            vertex(vc, pose, cx, cz, y0, r0, b1, dy, dr, color, light);
-            vertex(vc, pose, cx, cz, y1, r1, b1, dy, dr, color, light);
-            vertex(vc, pose, cx, cz, y1, r1, b0, dy, dr, color, light);
+            vertex(vc, pose, cx, cz, y0, r0, b0, dy, dr, color0, light);
+            vertex(vc, pose, cx, cz, y0, r0, b1, dy, dr, color0, light);
+            vertex(vc, pose, cx, cz, y1, r1, b1, dy, dr, color1, light);
+            vertex(vc, pose, cx, cz, y1, r1, b0, dy, dr, color1, light);
         }
     }
 
@@ -174,9 +180,9 @@ public final class H3Renderer implements RocketRenderers.Renderer {
 
     // ---- flames -----------------------------------------------------------------------------------------------------------------
 
-    /** A glowing cone hanging down from (x, y0, z); additive-looking through the translucent emissive type. */
+    /** A glowing cone hanging down from (x, y0, z), {@code argb} at the nozzle fading to clear at the tip. */
     private static void plume(VertexConsumer vc, PoseStack.Pose pose, double x, double z, double y0, double r0, double length, double r1, int argb) {
-        band(vc, pose, x, z, y0 - length, r1, y0, r0, 0, TAU, argb, 0xF000F0);
+        band(vc, pose, x, z, y0 - length, r1, y0, r0, 0, TAU, argb & 0x00FFFFFF, argb, 0xF000F0);
     }
 
     private void flames(PoseStack.Pose pose, MultiBufferSource buffers, float t, long gameTime, boolean srbsOn) {
@@ -195,8 +201,9 @@ public final class H3Renderer implements RocketRenderers.Renderer {
         }
         if (srbsOn) {
             for (double[] p : srbPositions()) {
-                plume(vc, pose, p[0], p[1], 0, 0.75, 7 * flicker, 0.35, 0xF0FFF6D8);
-                plume(vc, pose, p[0], p[1], 0.2, 0.95, 16 * flicker, 0.9, 0x90FFA030);
+                plume(vc, pose, p[0], p[1], 0, 0.75, 6 * flicker, 0.3, 0xFFFFF8E0);
+                plume(vc, pose, p[0], p[1], 0.2, 0.9, 14 * flicker, 1.4, 0xD0FFC050);
+                plume(vc, pose, p[0], p[1], 0.2, 1.0, 22 * flicker, 2.2, 0x70FF8A20);
             }
         }
     }
@@ -258,12 +265,12 @@ public final class H3Renderer implements RocketRenderers.Renderer {
             double ground = y - H3.climbed(v.acceleration, ascentTicks) + 0.3;
             int n = v.srbs == 0 ? 6 : 14;
             for (int i = 0; i < n; i++) {
-                double a = random.nextDouble() * Math.PI * 2, sp = 0.25 + random.nextDouble() * 0.45;
+                double a = random.nextDouble() * Math.PI * 2, sp = (0.25 + random.nextDouble() * 0.45) * (0.5 + s);
                 level.addParticle(ParticleTypes.CLOUD, x, ground, z, Math.cos(a) * sp, 0.02 + random.nextDouble() * 0.05, Math.sin(a) * sp);
             }
             if (v.srbs > 0) for (int i = 0; i < 4; i++) {
                 double a = random.nextDouble() * Math.PI * 2, sp = 0.1 + random.nextDouble() * 0.25;
-                level.addAlwaysVisibleParticle(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true, x + Math.cos(a) * 2, ground, z + Math.sin(a) * 2,
+                level.addAlwaysVisibleParticle(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true, x + Math.cos(a) * 4 * s, ground, z + Math.sin(a) * 4 * s,
                         Math.cos(a) * sp, 0.03, Math.sin(a) * sp);
             }
             if (ascentTicks % 10 == 0)
@@ -275,15 +282,15 @@ public final class H3Renderer implements RocketRenderers.Renderer {
             for (double[] p : srbPositions()) {
                 double px = x + p[0] * s, pz = z + p[1] * s;
                 for (int i = 0; i < 3; i++)
-                    level.addParticle(ParticleTypes.FLAME, px + (random.nextDouble() - .5) * .6, y - .3, pz + (random.nextDouble() - .5) * .6, 0, -.6, 0);
-                level.addAlwaysVisibleParticle(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true, px + (random.nextDouble() - .5), y - 1.5, pz + (random.nextDouble() - .5),
+                    level.addParticle(ParticleTypes.FLAME, px + (random.nextDouble() - .5) * 1.2 * s, y - .3, pz + (random.nextDouble() - .5) * 1.2 * s, 0, -.6, 0);
+                level.addAlwaysVisibleParticle(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true, px + (random.nextDouble() - .5) * 2 * s, y - 3 * s, pz + (random.nextDouble() - .5) * 2 * s,
                         (random.nextDouble() - .5) * .04, -0.02, (random.nextDouble() - .5) * .04);
                 level.addParticle(ParticleTypes.LARGE_SMOKE, px, y - 1, pz, (random.nextDouble() - .5) * .1, -.2, (random.nextDouble() - .5) * .1);
             }
         } else if (ascentTicks == srbSep && v.srbs > 0) {
             for (double[] p : srbPositions())
                 for (int i = 0; i < 12; i++)
-                    level.addParticle(ParticleTypes.POOF, x + p[0] * s, y + 7, z + p[1] * s, (random.nextDouble() - .5) * .3, (random.nextDouble() - .5) * .3, (random.nextDouble() - .5) * .3);
+                    level.addParticle(ParticleTypes.POOF, x + p[0] * s, y + 14 * s, z + p[1] * s, (random.nextDouble() - .5) * .3, (random.nextDouble() - .5) * .3, (random.nextDouble() - .5) * .3);
             level.playLocalSound(x, y, z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 3f, 1.4f, false);
         }
         if (ascentTicks == fairingSep) {
@@ -293,10 +300,10 @@ public final class H3Renderer implements RocketRenderers.Renderer {
         }
         // LE-9: the hydrogen flame itself is nearly invisible; a thin trail of water vapour condenses behind it
         if (random.nextInt(2) == 0) {
-            level.addParticle(ParticleTypes.CLOUD, x + (random.nextDouble() - .5) * 1.2, y - 3, z + (random.nextDouble() - .5) * 1.2, 0, -.05, 0);
+            level.addParticle(ParticleTypes.CLOUD, x + (random.nextDouble() - .5) * 2.4 * s, y - 6 * s, z + (random.nextDouble() - .5) * 2.4 * s, 0, -.05, 0);
         }
         for (int i = 0; i < v.engines; i++) {
-            level.addParticle(ParticleTypes.SOUL_FIRE_FLAME, x + (random.nextDouble() - .5) * 1.0, y - .2, z + (random.nextDouble() - .5) * 1.0, 0, -.4, 0);
+            level.addParticle(ParticleTypes.SOUL_FIRE_FLAME, x + (random.nextDouble() - .5) * 2 * s, y - .2, z + (random.nextDouble() - .5) * 2 * s, 0, -.4, 0);
         }
     }
 }
