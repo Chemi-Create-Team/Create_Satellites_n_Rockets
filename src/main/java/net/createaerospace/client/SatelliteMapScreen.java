@@ -2,6 +2,8 @@ package net.createaerospace.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.List;
+import java.util.UUID;
+import net.createaerospace.block.ConsoleSelect;
 import net.createaerospace.block.GroundConsoleBlockEntity;
 import net.createaerospace.client.globe.CubeEarth;
 import net.createaerospace.orbit.OrbitMath;
@@ -32,6 +34,16 @@ public class SatelliteMapScreen extends Screen {
     /** The point of the Earth in the middle, in degrees. Starts over the console. */
     private double viewLat, viewLon;
     private Button photo;
+    /** Where the globe and the list were last drawn, for the mouse. */
+    private CubeEarth.View lastView;
+    private int globeX, globeY, globeSize, listX, listY, listW, listRows, listFirst;
+    private double lastTick;
+    /** Rows the list is scrolled away from the selected satellite; back to 0 when the selection changes. */
+    private int scroll;
+    private UUID scrolledFrom;
+    /** A press on the globe that has not turned into a drag selects the dot under it when released. */
+    private boolean pressedOnGlobe;
+    private double dragged;
 
     public SatelliteMapScreen(BlockPos console) {
         super(Component.translatable("screen.create_aerospace_engineering.map"));
@@ -99,16 +111,23 @@ public class SatelliteMapScreen extends Screen {
         // the globe: quads with a depth, kept between z 40 and z 160 so that the names (z 250) stay on top, clipped to the frame
         float k = size / 2f / CubeEarth.FIT;
         var view = new CubeEarth.View(viewLat, viewLon, x0 + size / 2f, y0 + size / 2f, k);
+        lastView = view;
+        lastTick = tick;
+        globeX = x0;
+        globeY = y0;
+        globeSize = size;
+        Satellite hovered = onGlobe(mx, my) ? GlobeScene.pick(view, all, tick, mx, my, 7) : null;
         g.enableScissor(x0, y0, x0 + size, y0 + size);
         var sink = Globes.sink(g.bufferSource().getBuffer(RenderType.debugQuads()), g.pose().last().pose(), 100, 60 / (CubeEarth.DEPTH * k));
         GlobeScene.draw(sink, view, all, sel, tick, OrbitMath.latOf(console.getZ()), OrbitMath.lonOf(console.getX()),
                 x0, y0, x0 + size, y0 + size, Math.max(.5f, size / 400f), -CubeEarth.DEPTH * k);
         g.flush();
-        for (var label : GlobeScene.labels(view, all, sel, tick)) {
+        // with many satellites only the names that do not cover each other: the selected one and the one under the pointer first
+        for (var label : GlobeScene.labels(view, all, sel, hovered, tick, font::width, 6, x0 + size, 9, 24)) {
             PoseStack ps = g.pose();
             ps.pushPose();
             ps.translate(0, 0, 250);
-            g.drawString(font, label.name(), Math.min((int) label.x() + 6, x0 + size - font.width(label.name())), (int) label.y() - 4, label.selected() ? YELLOW : 0xFFE0E0E0, true);
+            g.drawString(font, label.name(), (int) label.x(), (int) label.y() - 4, label.selected() ? YELLOW : 0xFFE0E0E0, true);
             ps.popPose();
         }
         g.disableScissor();
@@ -147,15 +166,36 @@ public class SatelliteMapScreen extends Screen {
         int py = y0 - 3, ph = size + 6;
         frame(g, MARGIN, py, leftW, ph);
         g.drawString(font, Component.translatable("screen.create_aerospace_engineering.panel.list"), MARGIN + 5, py + 5, AMBER, false);
+        // the rows round the selected satellite, scrolled with the wheel; a chip in the colour of its orbit, a click selects
         int rows = Math.max(1, (ph - 20) / ROW), index = all.indexOf(sel);
-        int first = Math.max(0, Math.min(all.size() - rows, index - rows / 2));
+        UUID selId = sel == null ? null : sel.id();
+        if (!java.util.Objects.equals(selId, scrolledFrom)) {
+            scroll = 0;
+            scrolledFrom = selId;
+        }
+        int centred = index - rows / 2, first = Math.max(0, Math.min(all.size() - rows, centred + scroll));
+        scroll = first - centred;
+        listX = MARGIN;
+        listY = py + 18;
+        listW = leftW;
+        listRows = rows;
+        listFirst = first;
         for (int i = first; i < Math.min(all.size(), first + rows); i++) {
             Satellite s = all.get(i);
             int y = py + 18 + (i - first) * ROW;
             if (s == sel) g.fill(MARGIN + 2, y - 1, MARGIN + leftW - 2, y + ROW - 3, 0xFF1A2A44);
+            else if (mx >= MARGIN && mx < MARGIN + leftW && my >= y - 1 && my < y + ROW - 3) g.fill(MARGIN + 2, y - 1, MARGIN + leftW - 2, y + ROW - 3, 0xFF101C30);
+            g.fill(MARGIN + 5, y + 1, MARGIN + 9, y + 5, GlobeScene.color(s, tick));
             double[] p = OrbitMath.subpoint(s, tick);
-            fit(g, Component.literal((i + 1) + " " + s.name()), MARGIN + 5, y, leftW - 10, s == sel ? YELLOW : AMBER, false);
-            fit(g, Component.literal(OrbitMath.fmtLat(p[0]) + " " + OrbitMath.fmtLon(p[1])), MARGIN + 5, y + 9, leftW - 10, DIM, false);
+            fit(g, Component.literal((i + 1) + " " + s.name()), MARGIN + 11, y, leftW - 18, s == sel ? YELLOW : AMBER, false);
+            fit(g, Component.literal(OrbitMath.fmtLat(p[0]) + " " + OrbitMath.fmtLon(p[1])), MARGIN + 11, y + 9, leftW - 18, DIM, false);
+        }
+        if (all.size() > rows) {
+            // where the rows shown are in the whole list
+            int barTop = py + 18, bottom = py + ph - 4, span = bottom - barTop;
+            int t0 = barTop + span * first / all.size(), t1 = Math.max(t0 + 3, barTop + span * (first + rows) / all.size());
+            g.fill(MARGIN + leftW - 5, barTop, MARGIN + leftW - 3, bottom, BLUE_DARK);
+            g.fill(MARGIN + leftW - 5, t0, MARGIN + leftW - 3, t1, DIM);
         }
         // right: the readout, the same lines as the screen of the console
         int rx = width - MARGIN - rightW;
@@ -172,7 +212,59 @@ public class SatelliteMapScreen extends Screen {
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
         viewLon -= dx * .6;
         viewLat = Math.max(-85, Math.min(85, viewLat + dy * .6));
+        dragged += Math.abs(dx) + Math.abs(dy);
         return true;
+    }
+
+    private boolean onGlobe(double mx, double my) {
+        return lastView != null && mx >= globeX && mx < globeX + globeSize && my >= globeY && my < globeY + globeSize;
+    }
+
+    private boolean onList(double mx, double my) {
+        return listRows > 0 && mx >= listX && mx < listX + listW && my >= listY && my < listY + listRows * ROW;
+    }
+
+    /** A click on a line of the list selects that satellite; a press on the globe may become a click on a dot or a drag. */
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (super.mouseClicked(mx, my, button)) return true;
+        if (button != 0) return false;
+        if (onList(mx, my)) {
+            List<Satellite> all = ClientSatellites.get();
+            int i = listFirst + (int) ((my - listY) / ROW);
+            if (i >= 0 && i < all.size()) select(all.get(i));
+            return true;
+        }
+        pressedOnGlobe = onGlobe(mx, my);
+        dragged = 0;
+        return pressedOnGlobe;
+    }
+
+    @Override
+    public boolean mouseReleased(double mx, double my, int button) {
+        if (button == 0 && pressedOnGlobe) {
+            pressedOnGlobe = false;
+            if (dragged < 3 && onGlobe(mx, my)) {
+                Satellite s = GlobeScene.pick(lastView, ClientSatellites.get(), lastTick, mx, my, 7);
+                if (s != null) select(s);
+                return true;
+            }
+        }
+        return super.mouseReleased(mx, my, button);
+    }
+
+    /** The wheel scrolls the list, three lines at a time. */
+    @Override
+    public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+        if (onList(mx, my) && scrollY != 0) {
+            scroll -= (int) Math.signum(scrollY) * 3;
+            return true;
+        }
+        return super.mouseScrolled(mx, my, scrollX, scrollY);
+    }
+
+    private void select(Satellite s) {
+        PacketDistributor.sendToServer(new ConsoleSelect(console, s.id()));
     }
 
     /** A blue-framed screen. */

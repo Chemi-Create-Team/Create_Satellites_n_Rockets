@@ -110,9 +110,10 @@ public final class CfsCanvasRenderer {
         var sink = Globes.sink(c.buffers().getBuffer(RenderType.debugQuads()), c.pose().last().pose(), -(CubeEarth.DEPTH + 2) * k * zs, -zs);
         GlobeScene.draw(sink, view, all, sel, tick, homeLat, homeLon, x0, y0, x0 + size, y0 + size, k * .2f, -CubeEarth.DEPTH * k);
         float lh = size * .035f;
-        for (var label : GlobeScene.labels(view, all, sel, tick)) {
-            float width = Math.min(size * .3f, x0 + size - label.x() - k * .9f);
-            if (width > 0) g.text(Component.literal(label.name()), label.x() + k * .9f, label.y() - lh * .55f, width, lh * 1.1f, -.3f, 0,
+        // the names that do not cover each other, the selected one first; a name is about half as wide per letter as it is high
+        java.util.function.ToDoubleFunction<String> nameWidth = n -> Math.min(size * .3f, n.length() * lh * .6f);
+        for (var label : GlobeScene.labels(view, all, sel, null, tick, nameWidth, k * .9f, x0 + size, lh * 1.1f, 16)) {
+            g.text(Component.literal(label.name()), label.x(), label.y() - lh * .55f, (float) nameWidth.applyAsDouble(label.name()), lh * 1.1f, -.3f, 0,
                     label.selected() ? YELLOW : 0xFFE0E0E0);
         }
         for (String id : CfsLayout.buttons(View.MAP)) {

@@ -140,6 +140,7 @@ public class CreateAerospace {
             e.registerBlockEntity(Capabilities.ItemHandler.BLOCK, DISH_BE.get(), (be, side) -> be.items);
         });
         bus.addListener(RegisterPayloadHandlersEvent.class, net.createaerospace.photo.PhotoPackets::register);
+        bus.addListener(RegisterPayloadHandlersEvent.class, net.createaerospace.block.ConsoleSelect::register);
         bus.addListener(RegisterPayloadHandlersEvent.class, e ->
                 e.registrar("2").playToClient(SatellitesPayload.TYPE, SatellitesPayload.CODEC, SatellitesPayload::handle));
         bus.addListener(FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->

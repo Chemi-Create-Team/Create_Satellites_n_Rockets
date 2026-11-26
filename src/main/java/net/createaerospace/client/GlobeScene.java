@@ -1,8 +1,11 @@
 package net.createaerospace.client;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.ToDoubleFunction;
 import net.createaerospace.client.globe.CubeEarth;
+import net.createaerospace.client.globe.Crowd;
 import net.createaerospace.client.globe.CubeEarth.Sink;
 import net.createaerospace.client.globe.CubeEarth.View;
 import net.createaerospace.orbit.OrbitMath;
@@ -27,12 +30,17 @@ public final class GlobeScene {
     /** A satellite name and where it goes on the screen. */
     public record Label(String name, float x, float y, boolean selected) {}
 
+    /** A satellite and where its dot is on the screen, and whether the Earth is in front of it. */
+    private record Spot(Satellite satellite, float x, float y, float depth, boolean hidden) {}
+
     private GlobeScene() {}
 
     /**
      * {@code home} is the console or the computer: a green dot on the surface. Every satellite has a dot, a thin line down to the
      * point under it and its orbit as a circle of its tier's radius. The geostationary belt is a dashed circle over the equator.
-     * The selected satellite is larger and yellow, with a yellow ring and a yellow mark on the ground.
+     * The selected satellite is larger and yellow, with a yellow ring and a yellow mark on the ground. With many satellites
+     * ({@link Crowd}) satellites in the same orbit share a circle, and past the limits the circles become short arcs, the lines to
+     * the ground go and the dots get smaller.
      */
     public static void draw(Sink sink, View v, List<Satellite> all, Satellite sel, double tick, double homeLatDeg, double homeLonDeg,
                             float x0, float y0, float x1, float y1, float starHalf, float starDepth) {
@@ -46,11 +54,15 @@ public final class GlobeScene {
         geostationaryBelt(sink, v);
         marker(sink, v, CubeEarth.surface(Math.toRadians(homeLatDeg), Math.toRadians(homeLonDeg), GROUND_LIFT), .22f, HOME, false);
 
+        List<Satellite> circles = Crowd.circles(all, sel, tick);
+        boolean whole = circles.size() <= Crowd.CIRCLES, tethers = all.size() <= Crowd.TETHERS;
+        if (whole) for (Satellite s : circles) path(sink, v, s, tick, 64, LINE, CubeEarth.mul(color(s, tick), .5f));
         for (Satellite s : all) {
             if (s == sel) continue;
             int c = CubeEarth.mul(color(s, tick), .5f);
-            path(sink, v, s, tick, 96, LINE, c);
-            CubeEarth.line(sink, v, position(s, tick), ground(s, tick), LINE * .7f, CubeEarth.mul(c, .8f));
+            if (s.reentering(tick)) path(sink, v, s, tick, 48, LINE, c);
+            else if (!whole) arc(sink, v, s, tick, c);
+            if (tethers) CubeEarth.line(sink, v, position(s, tick), ground(s, tick), LINE * .7f, CubeEarth.mul(c, .8f));
         }
         if (sel != null) {
             path(sink, v, sel, tick, 144, SEL_LINE, sel.reentering(tick) ? REENTRY : YELLOW);
@@ -58,10 +70,23 @@ public final class GlobeScene {
             double[] sp = OrbitMath.subpoint(sel, tick);
             marker(sink, v, CubeEarth.surface(sp[0], sp[1], GROUND_LIFT), .19f, YELLOW, false);
         }
+        float dot = all.size() > Crowd.CROWDED ? DOT * .72f : DOT;
         for (Satellite s : all) {
             boolean selected = s == sel;
-            marker(sink, v, position(s, tick), selected ? SEL_DOT : DOT, selected ? YELLOW : color(s, tick),
+            marker(sink, v, position(s, tick), selected ? SEL_DOT : dot, selected ? YELLOW : color(s, tick),
                     RelayStorage.isRelay(s) && !s.abandoned() && !s.reentering(tick));
+        }
+    }
+
+    /** A tenth of the orbit behind the satellite, where there are too many orbits to draw each whole. */
+    private static void arc(Sink sink, View v, Satellite s, double tick, int argb) {
+        double r = radius(s, tick);
+        double[] last = position(s, tick);
+        for (int i = 1; i <= 8; i++) {
+            double[] sp = OrbitMath.orbitPoint(s, tick, -2 * Math.PI * i / 80);
+            double[] p = CubeEarth.position(sp[0], sp[1], r);
+            CubeEarth.line(sink, v, last, p, LINE, CubeEarth.mul(argb, 1 - i / 10f));
+            last = p;
         }
     }
 
@@ -92,14 +117,57 @@ public final class GlobeScene {
         }
     }
 
-    /** The names of the satellites that are not behind the Earth. */
-    public static List<Label> labels(View v, List<Satellite> all, Satellite sel, double tick) {
+    /**
+     * The names to show: of satellites not behind the Earth, the selected one and the one under the pointer ({@code hovered}, may be
+     * null) first, then the nearer ones, leaving out any that would cover a name already placed, at most {@code max}. Past
+     * {@link Crowd#CROWDED} satellites only the selected and the hovered one are named, so the names do not hide the Earth. A name
+     * starts {@code dx} right of its dot but no further right than ends it at {@code right}, is {@code width} wide and
+     * {@code height} high, centred on the dot; the label's x is where the name starts.
+     */
+    public static List<Label> labels(View v, List<Satellite> all, Satellite sel, Satellite hovered, double tick,
+                                     ToDoubleFunction<String> width, float dx, float right, float height, int max) {
+        boolean crowded = all.size() > Crowd.CROWDED;
+        List<Spot> spots = new ArrayList<>();
+        for (Spot spot : spots(v, all, tick)) {
+            if (spot.hidden() || crowded && spot.satellite() != sel && spot.satellite() != hovered) continue;
+            spots.add(spot);
+        }
+        spots.sort(Comparator.comparingInt((Spot spot) -> spot.satellite() == sel ? 0 : spot.satellite() == hovered ? 1 : 2)
+                .thenComparingDouble(spot -> -spot.depth()));
         List<Label> out = new ArrayList<>();
+        for (Spot spot : Crowd.declutter(spots, spot -> {
+            float w = (float) width.applyAsDouble(spot.satellite().name()), x = Math.min(spot.x() + dx, right - w);
+            return new float[] {x, spot.y() - height / 2, x + w, spot.y() + height / 2};
+        }, max)) {
+            float w = (float) width.applyAsDouble(spot.satellite().name());
+            out.add(new Label(spot.satellite().name(), Math.min(spot.x() + dx, right - w), spot.y(), spot.satellite() == sel));
+        }
+        return out;
+    }
+
+    /** The satellite whose dot is nearest a point of the screen, within {@code reach} screen units; those in front first. Or null. */
+    public static Satellite pick(View v, List<Satellite> all, double tick, double x, double y, double reach) {
+        Satellite best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (Spot spot : spots(v, all, tick)) {
+            double d = Math.hypot(spot.x() - x, spot.y() - y);
+            if (d > reach) continue;
+            // a dot behind the Earth can be picked only where no dot in front is near
+            double score = d + (spot.hidden() ? reach * 2 : 0);
+            if (score < bestScore) {
+                bestScore = score;
+                best = spot.satellite();
+            }
+        }
+        return best;
+    }
+
+    private static List<Spot> spots(View v, List<Satellite> all, double tick) {
+        List<Spot> out = new ArrayList<>(all.size());
         for (Satellite s : all) {
             double[] p = position(s, tick);
-            if (v.hidden(p)) continue;
             float[] at = v.at(p);
-            out.add(new Label(s.name(), at[0], at[1], s == sel));
+            out.add(new Spot(s, at[0], at[1], at[2], v.hidden(p)));
         }
         return out;
     }

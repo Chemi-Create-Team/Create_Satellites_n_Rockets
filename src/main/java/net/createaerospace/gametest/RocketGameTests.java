@@ -243,6 +243,33 @@ public class RocketGameTests {
     }
 
     @GameTest(template = "test_empty", batch = "console")
+    public static void theMapSelectsAnyOfAHundredSatellitesAtTheConsole(GameTestHelper h) {
+        var server = h.getLevel().getServer();
+        var data = SatelliteData.get(server);
+        java.util.List<Satellite> many = new java.util.ArrayList<>();
+        for (int i = 0; i < 120; i++) {
+            Satellite s = Satellite.deployed("S" + i, java.util.UUID.randomUUID(), "someone", i * 3 - 180, 0);
+            many.add(s);
+            data.put(server, s);
+        }
+        h.setBlock(CONSOLE, CreateAerospace.GROUND_CONSOLE.get().defaultBlockState());
+        var c = (GroundConsoleBlockEntity) h.getBlockEntity(CONSOLE);
+        BlockPos at = h.absolutePos(CONSOLE);
+        var near = new net.minecraft.world.phys.Vec3(at.getX() + 2.5, at.getY(), at.getZ() + .5);
+        var away = new net.minecraft.world.phys.Vec3(at.getX() + 20.5, at.getY(), at.getZ() + .5);
+        Satellite far = many.get(97);
+        h.assertTrue(net.createaerospace.block.ConsoleSelect.select(h.getLevel(), near, new net.createaerospace.block.ConsoleSelect(at, far.id())), "a click selects");
+        h.assertTrue(c.selected().id().equals(far.id()), "the 98th satellite in one click, someone else's too");
+        h.assertTrue(!net.createaerospace.block.ConsoleSelect.select(h.getLevel(), near, new net.createaerospace.block.ConsoleSelect(at, java.util.UUID.randomUUID())),
+                "not a satellite that does not exist");
+        h.assertTrue(!net.createaerospace.block.ConsoleSelect.select(h.getLevel(), away, new net.createaerospace.block.ConsoleSelect(at, many.get(3).id())),
+                "not from far away");
+        h.assertTrue(c.selected().id().equals(far.id()), "the selection stays");
+        for (Satellite s : many) data.remove(server, s.id());
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty", batch = "console")
     public static void theConsoleSelectsAndControlsSatellitesOfItsOwner(GameTestHelper h) {
         var server = h.getLevel().getServer();
         var data = SatelliteData.get(server);

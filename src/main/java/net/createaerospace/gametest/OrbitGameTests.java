@@ -257,6 +257,31 @@ public class OrbitGameTests {
     }
 
     @GameTest(template = "test_empty")
+    public static void aHundredSatellitesShareTheirOrbitsAndNamesDoNotOverlap(GameTestHelper h) {
+        java.util.List<Satellite> all = new java.util.ArrayList<>();
+        // 60 geostationary ones over the equator, and a constellation of 6 inclined planes of 10 low satellites each
+        for (int i = 0; i < 60; i++) all.add(Satellite.deployed("G" + i, UUID.randomUUID(), "", i * 6 - 180, 0));
+        for (int plane = 0; plane < 6; plane++) for (int i = 0; i < 10; i++) {
+            all.add(new Satellite(UUID.randomUUID(), "L" + plane + "-" + i, UUID.randomUUID(), "", 0, 2, plane * Math.PI / 3, i * Math.PI / 5, 0, Satellite.BEACON));
+        }
+        var circles = net.createaerospace.client.globe.Crowd.circles(all, null, 0);
+        h.assertTrue(circles.size() == 7, "120 satellites in 7 orbits draw 7 circles, got " + circles.size());
+        h.assertTrue(circles.size() <= net.createaerospace.client.globe.Crowd.CIRCLES, "so every orbit is drawn whole");
+        // a satellite whose node is a different degree has its own circle; debris has its own grey one
+        all.add(new Satellite(UUID.randomUUID(), "odd", UUID.randomUUID(), "", 0, 2, Math.toRadians(17), 0, 0, Satellite.BEACON));
+        all.add(all.get(0).abandon(Satellite.NO_REENTRY, 0, 0));
+        h.assertTrue(net.createaerospace.client.globe.Crowd.circles(all, null, 0).size() == 9, "a new plane and debris add circles");
+        h.assertTrue(net.createaerospace.client.globe.Crowd.circles(all, all.get(0), 0).size() == 9, "the selected one is left out only once");
+        // names: boxes 10 wide in a row 4 apart keep every third, the first wanted first
+        java.util.List<Integer> at = new java.util.ArrayList<>();
+        for (int i = 0; i < 30; i++) at.add(i);
+        var kept = net.createaerospace.client.globe.Crowd.declutter(at, i -> new float[] {i * 4, 0, i * 4 + 10, 8}, 100);
+        h.assertTrue(kept.get(0) == 0 && kept.get(1) == 3 && kept.size() == 10, "only names that do not cover another, got " + kept);
+        h.assertTrue(net.createaerospace.client.globe.Crowd.declutter(at, i -> new float[] {i * 20, 0, i * 20 + 10, 8}, 5).size() == 5, "at most max");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty")
     public static void theCubeEarthShowsOnlyTheSideTowardsTheViewer(GameTestHelper h) {
         var sea = new net.createaerospace.client.globe.CubeEarth((lat, lon) -> false);
         var land = new net.createaerospace.client.globe.CubeEarth((lat, lon) -> true);

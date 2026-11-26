@@ -110,6 +110,15 @@ public class GroundConsoleBlockEntity extends BlockEntity {
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 
+    /** Selects a satellite by its id (from the map screen); the caller has checked that it exists. */
+    public void select(UUID id) {
+        if (id.equals(selected)) return;
+        selected = id;
+        level.playSound(null, worldPosition, SoundEvents.STONE_BUTTON_CLICK_ON, SoundSource.BLOCKS, .6f, 1.4f);
+        setChanged();
+        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+    }
+
     private static void say(net.minecraft.world.entity.player.Player p, String key) {
         p.displayClientMessage(Component.translatable(key), true);
     }

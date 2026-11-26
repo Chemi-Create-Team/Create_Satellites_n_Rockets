@@ -34,7 +34,8 @@ Minecraft **1.21.1**, NeoForge, Java **21**. The required and optional mods are 
   world is a map of the Earth, one degree to 1000 blocks. [Orbits and coordinates](docs/orbit.md)
 - **Ground Control Console**. Buttons on its top choose a satellite and set its mode, altitude and inclination. The screen shows
   its latitude, longitude and the block under it; the map shows the Earth as a small cube of 8×8 tiles a face under drifting
-  clouds, with the satellites as dots and their orbits as circles, coloured by orbit.
+  clouds, with the satellites as dots and their orbits as circles, coloured by orbit. It stays readable with a hundred or more
+  satellites: shared orbits share a circle, and a click on a dot or a line of the list selects that satellite.
   Only the owner and operators may change a satellite. A Display Link can show it too.
   [Console](docs/ground-console.md) · [Map](docs/map.md)
 - **Reentry, abandoning and launch failures**. The reentry button under its cover brings a satellite down in a minute to burn up
