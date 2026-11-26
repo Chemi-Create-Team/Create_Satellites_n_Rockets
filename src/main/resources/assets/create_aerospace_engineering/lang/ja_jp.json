@@ -97,5 +97,9 @@
   "photo.create_aerospace_engineering.take": "衛星写真",
   "photo.create_aerospace_engineering.coordinates": "%1$s  |  X %2$s  Z %3$s  |  %4$s × %4$s ブロック",
   "photo.create_aerospace_engineering.unavailable": "地平線より上にある通信衛星を選択してください。",
-  "photo.create_aerospace_engineering.busy": "別の撮影が進行中です。"
+  "photo.create_aerospace_engineering.busy": "別の撮影が進行中です。",
+  "photo.create_aerospace_engineering.overview": "全景",
+  "photo.create_aerospace_engineering.viewport": "表示幅 %1$s ブロック · 1画素あたり %2$s ブロック",
+  "photo.create_aerospace_engineering.controls": "スクロールで拡大・縮小、ドラッグで移動、濃紺は地表データなし",
+  "photo.create_aerospace_engineering.loading": "衛星写真を読み込み中…"
 }

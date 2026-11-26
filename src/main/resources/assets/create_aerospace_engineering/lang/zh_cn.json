@@ -97,5 +97,9 @@
   "photo.create_aerospace_engineering.take": "卫星照片",
   "photo.create_aerospace_engineering.coordinates": "%1$s  |  X %2$s  Z %3$s  |  %4$s × %4$s 方块",
   "photo.create_aerospace_engineering.unavailable": "请选择地平线上方的通信卫星。",
-  "photo.create_aerospace_engineering.busy": "卫星正在执行另一项拍摄。"
+  "photo.create_aerospace_engineering.busy": "卫星正在执行另一项拍摄。",
+  "photo.create_aerospace_engineering.overview": "全景",
+  "photo.create_aerospace_engineering.viewport": "视野宽度 %1$s 方块 · 每像素 %2$s 方块",
+  "photo.create_aerospace_engineering.controls": "滚动缩放，拖动平移，深蓝处无地表数据",
+  "photo.create_aerospace_engineering.loading": "正在接收卫星图像…"
 }

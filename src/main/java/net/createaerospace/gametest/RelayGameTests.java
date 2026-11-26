@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.chunk.storage.ChunkSerializer;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -82,12 +83,27 @@ public final class RelayGameTests {
         var sample = origin.atY(160);
         level.setBlockAndUpdate(sample, Blocks.RED_CONCRETE.defaultBlockState());
         try {
-            byte[] pixels = OrbitalPhoto.capture(level, origin);
+            int half = OrbitalPhoto.SIZE / 2;
+            var image = new OrbitalPhoto.Raster(origin.getX() - half, origin.getZ() - half, 1);
+            var chunk = level.getChunkAt(origin);
+            image.sample(chunk);
+            byte[] pixels = image.pixels();
             int middle = ((OrbitalPhoto.SIZE / 2) * OrbitalPhoto.SIZE + OrbitalPhoto.SIZE / 2) * 3;
             int red = Byte.toUnsignedInt(pixels[middle]), green = Byte.toUnsignedInt(pixels[middle + 1]),
                     blue = Byte.toUnsignedInt(pixels[middle + 2]);
             h.assertTrue(pixels.length == OrbitalPhoto.BYTES && red > 100 && red > 2 * green && red > 2 * blue,
                     "The block at the centre of the camera appears as a red surface pixel, got " + red + "/" + green + "/" + blue);
+            var saved = new OrbitalPhoto.Raster(origin.getX() - half, origin.getZ() - half, 1);
+            saved.sampleSaved(chunk.getPos().x, chunk.getPos().z, ChunkSerializer.write(level, chunk),
+                    level.getMinBuildHeight(), level.getHeight());
+            h.assertTrue(java.util.Arrays.equals(pixels, saved.pixels()), "Saved chunk columns produce the same pixels as loaded columns");
+
+            var wide = new OrbitalPhoto.Tile(4, 0, 0);
+            var northeast = new OrbitalPhoto.Tile(4, 3, 3);
+            h.assertTrue(wide.valid() && northeast.valid() && wide.left(origin) == origin.getX() - 2048
+                    && northeast.top(origin) + northeast.span() == origin.getZ() + 2048
+                    && !new OrbitalPhoto.Tile(4, 4, 0).valid(), "The 16 overview tiles cover exactly a 4096-by-4096 square");
+
         } finally {
             level.removeBlock(sample, false);
         }

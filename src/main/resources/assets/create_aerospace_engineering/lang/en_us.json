@@ -97,5 +97,9 @@
   "photo.create_aerospace_engineering.take": "Satellite photo",
   "photo.create_aerospace_engineering.coordinates": "%1$s  |  X %2$s  Z %3$s  |  %4$s × %4$s blocks",
   "photo.create_aerospace_engineering.unavailable": "Select a communications satellite above the horizon.",
-  "photo.create_aerospace_engineering.busy": "The satellite is taking another photo."
+  "photo.create_aerospace_engineering.busy": "The satellite is taking another photo.",
+  "photo.create_aerospace_engineering.overview": "Overview",
+  "photo.create_aerospace_engineering.viewport": "View: %1$s blocks wide · %2$s blocks per pixel",
+  "photo.create_aerospace_engineering.controls": "Scroll to zoom · drag to move · dark blue: no terrain data",
+  "photo.create_aerospace_engineering.loading": "Receiving photo tiles…"
 }

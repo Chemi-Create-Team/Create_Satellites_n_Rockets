@@ -65,7 +65,9 @@ is dim. You see them from the spot where you stand. A geostationary satellite st
 
 ## Satellite relays and photos
 
-Load a communications satellite into a rocket, tune two Large Satellite Dishes to it, and connect each pedestal to its ME network with an AE2 Storage Bus. The ground console's map can also take a top-down photo of the actual terrain around the console. The large dish keeps its Frontier Science block ID after moving to this mod. [Setup and migration](docs/satellite-relay.md)
+Load a communications satellite into a rocket, tune two Large Satellite Dishes to it, and connect each pedestal to its ME network with an AE2 Storage Bus. The ground console's map can also take a 4,096 × 4,096-block top-down photo of the terrain around the console, with zoom down to one block per pixel. The large dish keeps its Frontier Science block ID after moving to this mod. [Setup and migration](docs/satellite-relay.md)
+
+[In-game satellite photo](docs/images/satellite-photo-wide.jpg)
 
 ## Control Computer (Create: Frontier Science)
 

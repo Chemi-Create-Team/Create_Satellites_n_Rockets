@@ -147,6 +147,7 @@ public class CreateAerospace {
             DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get());
             net.createaerospace.compat.cfs.CfsCompat.register();
         }));
+        NeoForge.EVENT_BUS.addListener(net.createaerospace.photo.PhotoPackets::tick);
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, e -> {
             if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer p)
                 PacketDistributor.sendToPlayer(p, new SatellitesPayload(SatelliteData.get(p.server).list(), SatelliteData.get(p.server).alerts()));
