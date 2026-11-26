@@ -14,6 +14,7 @@ public final class ClientSetup {
         bus.addListener(EntityRenderersEvent.RegisterRenderers.class, e -> {
             e.registerEntityRenderer(CreateAerospace.ROCKET.get(), RocketRenderer::new);
             e.registerBlockEntityRenderer(CreateAerospace.GROUND_CONSOLE_BE.get(), GroundConsoleRenderer::new);
+            e.registerBlockEntityRenderer(CreateAerospace.DISH_BE.get(), OrbitalDishRenderer::new);
         });
         bus.addListener(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent.class, e -> e.enqueueWork(() -> {
             net.createaerospace.compat.cfs.CfsCompat.registerClient();

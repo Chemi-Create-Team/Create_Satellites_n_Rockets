@@ -2,6 +2,8 @@ package net.createaerospace;
 
 import com.simibubi.create.api.behaviour.display.DisplaySource;
 import com.simibubi.create.api.registry.CreateRegistries;
+import net.createaerospace.relay.OrbitalDishBlock;
+import net.createaerospace.relay.OrbitalDishEntity;
 import net.createaerospace.block.GroundConsoleBlock;
 import net.createaerospace.block.GroundConsoleBlockEntity;
 import net.createaerospace.block.LaunchPadBlock;
@@ -72,6 +74,19 @@ public class CreateAerospace {
     public static final DeferredBlock<LaunchPadBlock> LAUNCH_PAD = BLOCKS.registerBlock("launch_pad", LaunchPadBlock::new, metal());
     public static final DeferredBlock<GroundConsoleBlock> GROUND_CONSOLE = BLOCKS.registerBlock("ground_console", GroundConsoleBlock::new, metal());
 
+    // Keep the relocated block, item and block-entity IDs so installed dishes survive the move.
+    private static final String DISH_ID = "me_parabolic_antenna";
+    private static final DeferredRegister.Blocks RELOCATED_BLOCKS = DeferredRegister.createBlocks("create_frontier_science");
+    private static final DeferredRegister.Items RELOCATED_ITEMS = DeferredRegister.createItems("create_frontier_science");
+    private static final DeferredRegister<BlockEntityType<?>> RELOCATED_ENTITIES =
+            DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, "create_frontier_science");
+    public static final DeferredBlock<OrbitalDishBlock> DISH = RELOCATED_BLOCKS.register(DISH_ID, OrbitalDishBlock::new);
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<OrbitalDishEntity>> DISH_BE =
+            RELOCATED_ENTITIES.register(DISH_ID, () -> BlockEntityType.Builder.of(OrbitalDishEntity::new, DISH.get()).build(null));
+    public static final ResourceLocation COMMUNICATION_PAYLOAD = id("communication_satellite");
+    public static final DeferredItem<Item> COMMUNICATION_SATELLITE = ITEMS.registerSimpleItem("communication_satellite",
+            new Item.Properties().stacksTo(4));
+
     public static final DeferredItem<SatelliteItem> SATELLITE = ITEMS.registerItem("satellite", SatelliteItem::new, new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<Item> ROCKET_ITEM = ITEMS.registerSimpleItem("rocket", new Item.Properties().stacksTo(4));
@@ -92,24 +107,34 @@ public class CreateAerospace {
             DISPLAY_SOURCES.register("satellite", SatelliteDisplaySource::new);
 
     static {
+        var dishItem = RELOCATED_ITEMS.registerSimpleBlockItem(DISH);
         ITEMS.registerSimpleBlockItem(LAUNCH_PAD);
         ITEMS.registerSimpleBlockItem(GROUND_CONSOLE);
         TABS.register("main", () -> CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup." + MOD_ID))
                 .icon(() -> SATELLITE.get().getDefaultInstance())
-                .displayItems((p, out) -> ITEMS.getEntries().forEach(i -> out.accept((Item) i.get())))
+                .displayItems((p, out) -> {
+                    ITEMS.getEntries().forEach(i -> out.accept((Item) i.get()));
+                    out.accept(dishItem.get());
+                })
                 .build());
     }
 
     public CreateAerospace(IEventBus bus) {
+        RELOCATED_BLOCKS.register(bus);
+        RELOCATED_ITEMS.register(bus);
+        RELOCATED_ENTITIES.register(bus);
         BLOCKS.register(bus);
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);
         ENTITIES.register(bus);
         TABS.register(bus);
         DISPLAY_SOURCES.register(bus);
-        bus.addListener(RegisterCapabilitiesEvent.class, e ->
-                e.registerBlockEntity(Capabilities.FluidHandler.BLOCK, LAUNCH_PAD_BE.get(), (be, side) -> be.tank));
+        bus.addListener(RegisterCapabilitiesEvent.class, e -> {
+            e.registerBlockEntity(Capabilities.FluidHandler.BLOCK, LAUNCH_PAD_BE.get(), (be, side) -> be.tank);
+            e.registerBlockEntity(Capabilities.ItemHandler.BLOCK, DISH_BE.get(), (be, side) -> be.items);
+        });
+        bus.addListener(RegisterPayloadHandlersEvent.class, net.createaerospace.photo.PhotoPackets::register);
         bus.addListener(RegisterPayloadHandlersEvent.class, e ->
                 e.registrar("2").playToClient(SatellitesPayload.TYPE, SatellitesPayload.CODEC, SatellitesPayload::handle));
         bus.addListener(FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
@@ -117,9 +142,12 @@ public class CreateAerospace {
             net.createaerospace.api.RocketApi.registerRocket(net.createaerospace.api.RocketApi.STANDARD, ROCKET_ITEM.get(),
                     new net.createaerospace.api.RocketApi.RocketType(Component.translatable("item." + MOD_ID + ".rocket"), 1000, 4000, 200, 0.03, 2.5, STANDARD_ROCKET_WIDTH, STANDARD_ROCKET_HEIGHT));
             net.createaerospace.rocket.H3.register(H3_ITEMS);
+            net.createaerospace.api.AerospaceApi.registerPayload(COMMUNICATION_PAYLOAD, COMMUNICATION_SATELLITE.get(),
+                    () -> Component.translatable("item." + MOD_ID + ".communication_satellite"));
             DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get());
             net.createaerospace.compat.cfs.CfsCompat.register();
         }));
+        NeoForge.EVENT_BUS.addListener(net.createaerospace.photo.PhotoPackets::tick);
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, e -> {
             if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer p)
                 PacketDistributor.sendToPlayer(p, new SatellitesPayload(SatelliteData.get(p.server).list(), SatelliteData.get(p.server).alerts()));

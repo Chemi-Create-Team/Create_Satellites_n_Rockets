@@ -188,6 +188,21 @@ public final class VoxelGlobe {
         box(sink, v, c, -3.1f * scale, 0, 0, 1.7f * scale, .14f * scale, .9f * scale, panel);
     }
 
+    /** A gold-foil bus, long blue solar wings and two gold mesh reflectors. */
+    public static void communicationsSatellite(Sink sink, View v, double[] position, float s) {
+        float[] c = v.at(position);
+        box(sink, v, c, 0, 0, 0, .9f * s, 1.3f * s, .75f * s, 0xFFCDA64D);
+        for (int side : new int[] {-1, 1}) {
+            box(sink, v, c, 0, side * 2.5f * s, 0, .76f * s, 1.15f * s, .12f * s, 0xFF314B83);
+            box(sink, v, c, side * 1.3f * s, .38f * s, 0, .55f * s, .16f * s, .16f * s, 0xFF9A742B);
+            for (int row = -2; row <= 2; row++) {
+                float reach = Math.abs(row) == 2 ? .9f : 1.38f;
+                box(sink, v, c, side * 3.05f * s, row * .5f * s, (.38f + .11f * row * row) * s,
+                        reach * s, .24f * s, .105f * s, row % 2 == 0 ? 0xFFE8CD6F : 0xFFF7E392);
+            }
+        }
+    }
+
     private static final double YAW = Math.toRadians(-32), PITCH = Math.toRadians(24);
 
     /** An axis-aligned box in model space (x right, y up, z towards the viewer), turned by a fixed yaw and pitch, shown at screen point {@code c}. */

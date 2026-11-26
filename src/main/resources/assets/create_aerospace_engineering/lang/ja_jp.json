@@ -84,5 +84,22 @@
   "computer.create_aerospace_engineering.status_state": "%s  %s",
   "message.create_aerospace_engineering.launch_failed": "打ち上げ失敗: %s が爆発し、積荷%s個を失った",
   "command.create_aerospace_engineering.reentering": "%s機の衛星がここの上空へ再突入する",
-  "command.create_aerospace_engineering.abandoned": "%s機の衛星を放棄した"
+  "command.create_aerospace_engineering.abandoned": "%s機の衛星を放棄した",
+  "item.create_aerospace_engineering.communication_satellite": "通信衛星",
+  "block.create_frontier_science.me_parabolic_antenna": "大型衛星パラボラアンテナ",
+  "relay.create_aerospace_engineering.unbound": "衛星未選択。空の手でスニーク右クリックすると選べます。",
+  "relay.create_aerospace_engineering.none": "選択できる通信衛星がありません。",
+  "relay.create_aerospace_engineering.denied": "このアンテナの設定を変更できません。",
+  "relay.create_aerospace_engineering.linked": "%s と通信中",
+  "relay.create_aerospace_engineering.out_of_view": "%s は地平線の下か、通信範囲外です。",
+  "relay.create_aerospace_engineering.recovery": "%s は軌道離脱しました。在庫を取り出せます。",
+  "photo.create_aerospace_engineering.title": "衛星写真",
+  "photo.create_aerospace_engineering.take": "衛星写真",
+  "photo.create_aerospace_engineering.coordinates": "%1$s  |  X %2$s  Z %3$s  |  %4$s × %4$s ブロック",
+  "photo.create_aerospace_engineering.unavailable": "地平線より上にある通信衛星を選択してください。",
+  "photo.create_aerospace_engineering.busy": "別の撮影が進行中です。",
+  "photo.create_aerospace_engineering.overview": "全景",
+  "photo.create_aerospace_engineering.viewport": "表示幅 %1$s ブロック · 1画素あたり %2$s ブロック",
+  "photo.create_aerospace_engineering.controls": "スクロールで拡大・縮小、ドラッグで移動、濃紺は地表データなし",
+  "photo.create_aerospace_engineering.loading": "衛星写真を読み込み中…"
 }

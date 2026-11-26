@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GEG",
+    "PSP",
+    "GEG"
+  ],
+  "key": {
+    "G": {
+      "item": "create:golden_sheet"
+    },
+    "E": {
+      "item": "create:electron_tube"
+    },
+    "P": {
+      "item": "minecraft:blue_stained_glass"
+    },
+    "S": {
+      "item": "create_aerospace_engineering:satellite"
+    }
+  },
+  "result": {
+    "id": "create_aerospace_engineering:communication_satellite",
+    "count": 1
+  }
+}

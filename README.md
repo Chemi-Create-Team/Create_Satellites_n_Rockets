@@ -11,11 +11,13 @@ Minecraft **1.21.1**, NeoForge, Java **21**. The required and optional mods are 
 | To | Go to |
 | --- | --- |
 | Learn how it works: numbers, recipes, controls | [Specifications](docs/README.md) (Japanese) |
-| Install it, optional integrations, the API JAR | [Installation guide](dist/README.md) (Japanese) |
+| Install it: latest JAR, optional integrations | [Installation guide](dist/README.md) (Japanese) |
 | Add satellites or rockets from another mod | [API for other mods](docs/api.md) (Japanese) |
 | See what changed | [Changelog](CHANGELOG.md) (Japanese) |
 
 ![Standard 60 m rocket on the launch pad](docs/images/rocket-60m.jpg)
+
+![A satellite photo of 4,096 x 4,096 blocks, zoomed to one block per pixel](docs/images/satellite-photo-wide.jpg)
 
 ## Features
 
@@ -36,9 +38,13 @@ Minecraft **1.21.1**, NeoForge, Java **21**. The required and optional mods are 
 - **Reentry, abandoning and launch failures**. The reentry button under its cover brings a satellite down in a minute to burn up
   as a fireball over the console, by day as well. An abandoned satellite is debris, and a low one decays after a few days. Now
   and then (3%) a launch fails. [Reentry](docs/orbit.md#放棄と再突入) · [Launch failures](docs/launch.md#打ち上げの失敗)
+- **Satellite relay and photos**. Launch a communications satellite and point a Large Satellite Dish at each base to it: the
+  satellite's 27-slot shared inventory carries items between distant bases (an AE2 ME storage bus or a hopper moves them in and
+  out). From the console map you can photograph 4,096 × 4,096 blocks of real terrain around the console. The dish moved here from
+  Frontier Science and keeps its old registry ID. [Relay and photos](docs/satellite-relay.md)
 - **The night sky**. Every satellite above your horizon is a moving dot, seen from where you stand; a geostationary one stays in
   one place. [The sky](docs/orbit.md#夜空)
-- **Control Computer**. With [Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science) 0.3.26 or
+- **Control Computer**. With [Create: Frontier Science](https://github.com/Chemi-Create-Team/Create-Frontier-Science) 0.3.32 or
   newer, the console's controls and map are also the **Satellites** app of its display boards. Optional.
   [Control Computer](docs/control-computer.md)
 - **API for other mods**. Other mods register their own items as satellite payloads or as rockets, and read the satellites'
@@ -51,7 +57,7 @@ Minecraft **1.21.1**, NeoForge, Java **21**. The required and optional mods are 
 ./gradlew runGameTestServer
 ```
 
-The JAR is written to `build/libs/`. Developers start from [AGENTS.md](AGENTS.md).
+The JAR is written to `build/libs/`; released JARs and their hashes are in `dist/`. Developers start from [AGENTS.md](AGENTS.md).
 
 ## Credits
 

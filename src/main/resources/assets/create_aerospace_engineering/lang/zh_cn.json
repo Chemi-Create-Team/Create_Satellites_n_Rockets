@@ -84,5 +84,22 @@
   "computer.create_aerospace_engineering.status_state": "%s  %s",
   "message.create_aerospace_engineering.launch_failed": "发射失败：%s 爆炸，损失%s个载荷。",
   "command.create_aerospace_engineering.reentering": "%s颗卫星将在此处上空再入。",
-  "command.create_aerospace_engineering.abandoned": "已废弃%s颗卫星。"
+  "command.create_aerospace_engineering.abandoned": "已废弃%s颗卫星。",
+  "item.create_aerospace_engineering.communication_satellite": "通信卫星",
+  "block.create_frontier_science.me_parabolic_antenna": "大型卫星抛物面天线",
+  "relay.create_aerospace_engineering.unbound": "尚未选择卫星。空手潜行右键可选择。",
+  "relay.create_aerospace_engineering.none": "没有可选的通信卫星。",
+  "relay.create_aerospace_engineering.denied": "你无权设置此天线。",
+  "relay.create_aerospace_engineering.linked": "已连接至 %s",
+  "relay.create_aerospace_engineering.out_of_view": "%s 位于地平线下方或覆盖范围之外。",
+  "relay.create_aerospace_engineering.recovery": "%s 已离轨。可以取回库存。",
+  "photo.create_aerospace_engineering.title": "卫星照片",
+  "photo.create_aerospace_engineering.take": "卫星照片",
+  "photo.create_aerospace_engineering.coordinates": "%1$s  |  X %2$s  Z %3$s  |  %4$s × %4$s 方块",
+  "photo.create_aerospace_engineering.unavailable": "请选择地平线上方的通信卫星。",
+  "photo.create_aerospace_engineering.busy": "卫星正在执行另一项拍摄。",
+  "photo.create_aerospace_engineering.overview": "全景",
+  "photo.create_aerospace_engineering.viewport": "视野宽度 %1$s 方块 · 每像素 %2$s 方块",
+  "photo.create_aerospace_engineering.controls": "滚动缩放，拖动平移，深蓝处无地表数据",
+  "photo.create_aerospace_engineering.loading": "正在接收卫星图像…"
 }

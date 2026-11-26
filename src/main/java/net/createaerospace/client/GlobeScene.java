@@ -7,6 +7,7 @@ import net.createaerospace.client.globe.VoxelGlobe.Sink;
 import net.createaerospace.client.globe.VoxelGlobe.View;
 import net.createaerospace.orbit.OrbitMath;
 import net.createaerospace.orbit.Satellite;
+import net.createaerospace.relay.RelayStorage;
 
 /** The Earth with the satellites over it: what the map screen and the Control Computer app both draw. */
 public final class GlobeScene {
@@ -37,7 +38,10 @@ public final class GlobeScene {
             boolean selected = s == sel;
             // a satellite coming down glows orange, debris is grey
             int body = s.reentering(tick) ? 0xFFFF7020 : selected ? YELLOW : s.abandoned() ? 0xFF808890 : OTHER;
-            VoxelGlobe.satellite(sink, v, position(s, tick), selected ? 1.35f : 1f, body, selected ? SEL_PANEL : s.abandoned() ? 0xFF3A4048 : OTHER_PANEL);
+            if (RelayStorage.isRelay(s) && !s.abandoned() && !s.reentering(tick))
+                VoxelGlobe.communicationsSatellite(sink, v, position(s, tick), selected ? 1.25f : .9f);
+            else VoxelGlobe.satellite(sink, v, position(s, tick), selected ? 1.35f : 1f, body,
+                    selected ? SEL_PANEL : s.abandoned() ? 0xFF3A4048 : OTHER_PANEL);
         }
     }
 
