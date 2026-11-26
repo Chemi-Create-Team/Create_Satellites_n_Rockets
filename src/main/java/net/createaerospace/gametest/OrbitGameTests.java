@@ -257,20 +257,42 @@ public class OrbitGameTests {
     }
 
     @GameTest(template = "test_empty")
-    public static void theVoxelEarthShowsOnlyTheSideTowardsTheViewer(GameTestHelper h) {
-        var sea = new net.createaerospace.client.globe.VoxelGlobe((lat, lon) -> false);
-        var land = new net.createaerospace.client.globe.VoxelGlobe((lat, lon) -> true);
+    public static void theCubeEarthShowsOnlyTheSideTowardsTheViewer(GameTestHelper h) {
+        var sea = new net.createaerospace.client.globe.CubeEarth((lat, lon) -> false);
+        var land = new net.createaerospace.client.globe.CubeEarth((lat, lon) -> true);
         int[] seaQuads = {0}, landQuads = {0};
-        var view = new net.createaerospace.client.globe.VoxelGlobe.View(10, 20, 0, 0, 1);
+        var view = new net.createaerospace.client.globe.CubeEarth.View(10, 20, 0, 0, 1);
         sea.drawEarth((a, b, c, d, e, f, g, i, j, k, l, m, argb) -> seaQuads[0]++, view);
         land.drawEarth((a, b, c, d, e, f, g, i, j, k, l, m, argb) -> landQuads[0]++, view);
-        int n = net.createaerospace.client.globe.VoxelGlobe.N;
-        h.assertTrue(seaQuads[0] > n * n && seaQuads[0] < 12 * n * n, "a sphere of cubes shows a few thousand faces, got " + seaQuads[0]);
-        h.assertTrue(landQuads[0] > seaQuads[0] / 2, "land is a sphere of cubes too, got " + landQuads[0]);
+        int n = net.createaerospace.client.globe.CubeEarth.N;
+        float half = net.createaerospace.client.globe.CubeEarth.HALF;
+        // seen from 10N 20E, the faces towards 0E, 90E and the north pole show: three faces of 16 by 16 tiles, land or sea alike
+        h.assertTrue(seaQuads[0] == 3 * n * n, "three faces of tiles show, got " + seaQuads[0]);
+        h.assertTrue(landQuads[0] == seaQuads[0], "land is as flat as the sea, got " + landQuads[0]);
         // the point in the middle of the view is on the near side; its opposite is behind the Earth
-        var near = net.createaerospace.client.globe.VoxelGlobe.position(Math.toRadians(10), Math.toRadians(20), n * 1.5);
-        var far = net.createaerospace.client.globe.VoxelGlobe.position(Math.toRadians(-10), Math.toRadians(200), n * 1.5);
+        var near = net.createaerospace.client.globe.CubeEarth.position(Math.toRadians(10), Math.toRadians(20), half * 1.5);
+        var far = net.createaerospace.client.globe.CubeEarth.position(Math.toRadians(-10), Math.toRadians(200), half * 1.5);
         h.assertTrue(!view.hidden(near) && view.hidden(far), "a satellite behind the Earth is hidden");
+        // a point far to the side of the cube is not behind it, even on the far half
+        var beside = net.createaerospace.client.globe.CubeEarth.position(0, Math.toRadians(110), net.createaerospace.client.globe.CubeEarth.orbitRadius(3));
+        h.assertTrue(!view.hidden(beside), "a geostationary satellite beside the Earth shows");
+        // every orbit is a cube-shaped shell outside the Earth, higher for each tier, so no line runs through the cube
+        double last = half;
+        for (int tier = 0; tier < OrbitMath.ALT_KM.length; tier++) {
+            double r = net.createaerospace.client.globe.CubeEarth.orbitRadius(tier);
+            h.assertTrue(r > last, "tier " + tier + " is above the one under it");
+            for (int lat = -85; lat <= 85; lat += 17) for (int lon = -180; lon < 180; lon += 23) {
+                var p = net.createaerospace.client.globe.CubeEarth.position(Math.toRadians(lat), Math.toRadians(lon), r);
+                double m = Math.max(Math.abs(p[0]), Math.max(Math.abs(p[1]), Math.abs(p[2])));
+                h.assertTrue(Math.abs(m - r) < 1e-9, "tier " + tier + " keeps its height over " + lat + ", " + lon);
+            }
+            last = r;
+        }
+        // the ring of an inclined orbit closes after one turn and starts at the satellite
+        var s = new Satellite(UUID.randomUUID(), "ring", UUID.randomUUID(), "", 0, 2, 1.1, .4, 0, Satellite.BEACON);
+        double[] at = OrbitMath.subpoint(s, 777), start = OrbitMath.orbitPoint(s, 777, 0), round = OrbitMath.orbitPoint(s, 777, 2 * Math.PI);
+        h.assertTrue(Math.abs(at[0] - start[0]) < 1e-9 && Math.abs(at[1] - start[1]) < 1e-9, "the ring starts at the satellite");
+        h.assertTrue(Math.abs(start[0] - round[0]) < 1e-9 && Math.abs(OrbitMath.wrap(start[1] - round[1])) < 1e-9, "the ring closes");
         h.succeed();
     }
 }

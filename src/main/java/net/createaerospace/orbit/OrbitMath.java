@@ -83,7 +83,16 @@ public final class OrbitMath {
     }
 
     private static double[] orbitSubpoint(Satellite s, double tick) {
-        double u = s.phase(tick), i = Math.toRadians(INCLINATION_DEG[s.incl()]);
+        return orbitPoint(s, tick, 0);
+    }
+
+    /**
+     * The point under the orbit {@code ahead} radians further along it than the satellite is, with the Earth turned as it is at
+     * {@code tick}: going once round (0 to 2 pi) draws the orbit as a closed ring, where the satellite's own track over the turning
+     * Earth would not close.
+     */
+    public static double[] orbitPoint(Satellite s, double tick, double ahead) {
+        double u = s.phase(tick) + ahead, i = Math.toRadians(INCLINATION_DEG[s.incl()]);
         double cu = Math.cos(u), su = Math.sin(u), cr = Math.cos(s.raan()), sr = Math.sin(s.raan()), ci = Math.cos(i);
         double x = cr * cu - sr * ci * su, y = sr * cu + cr * ci * su, z = Math.sin(i) * su;
         double lon = Math.atan2(y, x) - 2 * Math.PI * tick / DAY_TICKS;

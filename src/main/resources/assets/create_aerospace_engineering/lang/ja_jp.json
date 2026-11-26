@@ -28,6 +28,7 @@
   "screen.create_aerospace_engineering.map": "衛星マップ",
   "screen.create_aerospace_engineering.selected": "%s  %s %s（ブロック X %s, Z %s） %s km",
   "screen.create_aerospace_engineering.legend": "緑: このコンソール　黄: 選択中の衛星　ドラッグで地球を回す　1度 = 1000ブロック",
+  "screen.create_aerospace_engineering.legend.orbits": "軌道 緑: 低軌道　青緑: 高めの低軌道　青: 中軌道　紫: 静止軌道（破線: 静止軌道帯）",
   "screen.create_aerospace_engineering.count": "衛星 %s",
   "screen.create_aerospace_engineering.clock": "%s日目  %s",
   "screen.create_aerospace_engineering.panel.list": "衛星一覧",

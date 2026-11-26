@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import net.createaerospace.CreateAerospace;
 import net.createaerospace.block.ConsoleButton;
-import net.createaerospace.client.globe.VoxelGlobe;
+import net.createaerospace.client.globe.CubeEarth;
 import net.createaerospace.compat.cfs.CfsLayout;
 import net.createaerospace.compat.cfs.CfsLayout.Rect;
 import net.createaerospace.compat.cfs.CfsLayout.View;
@@ -19,7 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.client.renderer.RenderType;
 
 /**
- * Draws the ground console app of the CFS Control Computer: the controls, or the Earth as a sphere of cubes with the satellites over it. The satellites and the time come from the
+ * Draws the ground console app of the CFS Control Computer: the controls, or the cube Earth with the satellites as dots and their orbits as lines. The satellites and the time come from the
  * client's own copy; the frame only says which view, which satellite and until when the deorbit cover is open. Every position of a
  * button is from {@link CfsLayout}. Colors are those of {@link SatelliteMapScreen}. Only loaded when CFS is.
  */
@@ -100,19 +100,19 @@ public final class CfsCanvasRenderer {
         float w = c.width(), h = c.height();
         Rect area = CfsLayout.MAP;
         box(g, w, h, area, -.003f, 0xFF03060C, BLUE);
-        // the Earth fits a square in the middle of the area; the orbits reach 1.75 Earth radii
+        // the Earth fits a square in the middle of the area; the geostationary ring is twice as far out as the faces
         float aw = (area.r() - area.l()) * w, ah = (area.b() - area.t()) * h, size = Math.min(aw, ah) * .96f;
         float x0 = area.l() * w + (aw - size) / 2, y0 = area.t() * h + (ah - size) / 2;
-        float k = size / 2f / (VoxelGlobe.N * 1.95f), zs = .2f;
+        float k = size / 2f / CubeEarth.FIT, zs = .2f;
         double homeLat = OrbitMath.latOf(c.boardPos().getZ()), homeLon = OrbitMath.lonOf(c.boardPos().getX());
         // over the board by default; the turn buttons add steps of 45 degrees
-        var view = new VoxelGlobe.View(Math.max(-40, Math.min(40, homeLat)), homeLon + 45 * c.data().getInt("Rot"), x0 + size / 2, y0 + size / 2, k);
-        var sink = Globes.sink(c.buffers().getBuffer(RenderType.debugQuads()), c.pose().last().pose(), -2.6f * VoxelGlobe.N * k * zs, -zs);
-        GlobeScene.draw(sink, view, all, sel, tick, homeLat, homeLon, x0, y0, x0 + size, y0 + size, k * .2f, -2.4f * VoxelGlobe.N * k);
+        var view = new CubeEarth.View(Math.max(-40, Math.min(40, homeLat)), homeLon + 45 * c.data().getInt("Rot"), x0 + size / 2, y0 + size / 2, k);
+        var sink = Globes.sink(c.buffers().getBuffer(RenderType.debugQuads()), c.pose().last().pose(), -(CubeEarth.DEPTH + 2) * k * zs, -zs);
+        GlobeScene.draw(sink, view, all, sel, tick, homeLat, homeLon, x0, y0, x0 + size, y0 + size, k * .2f, -CubeEarth.DEPTH * k);
         float lh = size * .035f;
         for (var label : GlobeScene.labels(view, all, sel, tick)) {
-            float width = Math.min(size * .3f, x0 + size - label.x() - k * 3);
-            if (width > 0) g.text(Component.literal(label.name()), label.x() + k * 3, label.y() - lh * .55f, width, lh * 1.1f, -.3f, 0,
+            float width = Math.min(size * .3f, x0 + size - label.x() - k * 1.2f);
+            if (width > 0) g.text(Component.literal(label.name()), label.x() + k * 1.2f, label.y() - lh * .55f, width, lh * 1.1f, -.3f, 0,
                     label.selected() ? YELLOW : 0xFFE0E0E0);
         }
         for (String id : CfsLayout.buttons(View.MAP)) {

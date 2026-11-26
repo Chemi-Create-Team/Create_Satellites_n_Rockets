@@ -4,24 +4,24 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.io.IOException;
 import net.createaerospace.CreateAerospace;
-import net.createaerospace.client.globe.VoxelGlobe;
+import net.createaerospace.client.globe.CubeEarth;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
-/** The voxel Earth, built once from {@code textures/gui/land_mask.png}, and the sinks that draw it. */
+/** The cube Earth, built once from {@code textures/gui/land_mask.png}, and the sinks that draw it. */
 public final class Globes {
     private static final ResourceLocation MASK = CreateAerospace.id("textures/gui/land_mask.png");
-    private static VoxelGlobe globe;
+    private static CubeEarth globe;
 
     private Globes() {}
 
-    public static synchronized VoxelGlobe get() {
-        if (globe == null) globe = new VoxelGlobe(land());
+    public static synchronized CubeEarth get() {
+        if (globe == null) globe = new CubeEarth(land());
         return globe;
     }
 
-    private static VoxelGlobe.Land land() {
+    private static CubeEarth.Land land() {
         try (var in = Minecraft.getInstance().getResourceManager().open(MASK); NativeImage img = NativeImage.read(in)) {
             int w = img.getWidth(), h = img.getHeight();
             boolean[] land = new boolean[w * h];
@@ -34,7 +34,7 @@ public final class Globes {
     }
 
     /** Quads into a vertex consumer (position and colour, no culling); a depth {@code d} becomes {@code zBase + d * zScale}. */
-    public static VoxelGlobe.Sink sink(VertexConsumer vc, Matrix4f m, float zBase, float zScale) {
+    public static CubeEarth.Sink sink(VertexConsumer vc, Matrix4f m, float zBase, float zScale) {
         return (x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3, argb) -> {
             vc.addVertex(m, x0, y0, zBase + z0 * zScale).setColor(argb);
             vc.addVertex(m, x1, y1, zBase + z1 * zScale).setColor(argb);

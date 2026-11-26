@@ -3,7 +3,7 @@ package net.createaerospace.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.List;
 import net.createaerospace.block.GroundConsoleBlockEntity;
-import net.createaerospace.client.globe.VoxelGlobe;
+import net.createaerospace.client.globe.CubeEarth;
 import net.createaerospace.orbit.OrbitMath;
 import net.createaerospace.orbit.Satellite;
 import net.createaerospace.orbit.SatelliteReadout;
@@ -19,7 +19,8 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * A mission control wall: the Earth as a sphere of cubes with the satellites over it in the middle (drag to turn it), the list of
+ * A mission control wall: the Earth as a cube of 16 by 16 tiles a face with the satellites as dots and their orbits as lines in the
+ * middle (drag to turn it), the list of
  * satellites on the left and the readout of the selected one on the right. One degree is 1000 blocks, so the readout also gives the
  * block position under the satellite. The land comes from {@code textures/gui/land_mask.png}, Natural Earth, public domain.
  */
@@ -95,14 +96,14 @@ public class SatelliteMapScreen extends Screen {
         GroundConsoleBlockEntity be = level.getBlockEntity(console) instanceof GroundConsoleBlockEntity c ? c : null;
         Satellite sel = be == null ? null : be.selected();
 
-        // the globe: quads with a depth, kept between z 35 and z 165 so that the names (z 250) stay on top
-        float k = size / 2f / (VoxelGlobe.N * 1.95f);
-        var view = new VoxelGlobe.View(viewLat, viewLon, x0 + size / 2f, y0 + size / 2f, k);
-        var sink = Globes.sink(g.bufferSource().getBuffer(RenderType.debugQuads()), g.pose().last().pose(), 100, .5f);
-        GlobeScene.draw(sink, view, all, sel, tick, OrbitMath.latOf(console.getZ()), OrbitMath.lonOf(console.getX()),
-                x0, y0, x0 + size, y0 + size, Math.max(.5f, size / 400f), -VoxelGlobe.N * k * 2.4f);
-        g.flush();
+        // the globe: quads with a depth, kept between z 40 and z 160 so that the names (z 250) stay on top, clipped to the frame
+        float k = size / 2f / CubeEarth.FIT;
+        var view = new CubeEarth.View(viewLat, viewLon, x0 + size / 2f, y0 + size / 2f, k);
         g.enableScissor(x0, y0, x0 + size, y0 + size);
+        var sink = Globes.sink(g.bufferSource().getBuffer(RenderType.debugQuads()), g.pose().last().pose(), 100, 60 / (CubeEarth.DEPTH * k));
+        GlobeScene.draw(sink, view, all, sel, tick, OrbitMath.latOf(console.getZ()), OrbitMath.lonOf(console.getX()),
+                x0, y0, x0 + size, y0 + size, Math.max(.5f, size / 400f), -CubeEarth.DEPTH * k);
+        g.flush();
         for (var label : GlobeScene.labels(view, all, sel, tick)) {
             PoseStack ps = g.pose();
             ps.pushPose();
@@ -133,6 +134,7 @@ public class SatelliteMapScreen extends Screen {
                     OrbitMath.fmtLon(p[1]), b[0], b[1], (int) Math.round(OrbitMath.altKm(sel, tick))), areaX, ty, areaW, AMBER, true);
         }
         fit(g, Component.translatable("screen.create_aerospace_engineering.legend"), areaX, ty + 11, areaW, DIM, true);
+        fit(g, Component.translatable("screen.create_aerospace_engineering.legend.orbits"), areaX, ty + 21, areaW, DIM, true);
 
         // lit only when the server would take the photo: a working relay of this player, beaconing, above the console's horizon
         var me = minecraft.player;

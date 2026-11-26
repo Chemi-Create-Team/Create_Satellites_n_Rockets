@@ -28,6 +28,7 @@
   "screen.create_aerospace_engineering.map": "卫星地图",
   "screen.create_aerospace_engineering.selected": "%s  %s %s（方块 X %s, Z %s） %s km",
   "screen.create_aerospace_engineering.legend": "绿色：本控制台　黄色：选中的卫星　拖动旋转地球　1度 = 1000方块",
+  "screen.create_aerospace_engineering.legend.orbits": "轨道 绿：低轨道　青绿：较高低轨道　蓝：中轨道　紫：地球静止轨道（虚线：静止轨道带）",
   "screen.create_aerospace_engineering.count": "卫星 %s",
   "screen.create_aerospace_engineering.clock": "第%s天  %s",
   "screen.create_aerospace_engineering.panel.list": "卫星列表",

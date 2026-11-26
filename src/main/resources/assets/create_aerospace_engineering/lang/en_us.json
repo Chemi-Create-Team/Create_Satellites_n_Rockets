@@ -28,6 +28,7 @@
   "screen.create_aerospace_engineering.map": "Satellite Map",
   "screen.create_aerospace_engineering.selected": "%s  %s %s  (block X %s, Z %s)  %s km",
   "screen.create_aerospace_engineering.legend": "Green: this console. Yellow: selected satellite. Drag to turn the Earth. 1 degree = 1000 blocks.",
+  "screen.create_aerospace_engineering.legend.orbits": "Orbits: green low, teal high low, blue medium, violet geostationary (dashed: GEO belt)",
   "screen.create_aerospace_engineering.count": "SAT %s",
   "screen.create_aerospace_engineering.clock": "DAY %s  %s",
   "screen.create_aerospace_engineering.panel.list": "SATELLITES",
