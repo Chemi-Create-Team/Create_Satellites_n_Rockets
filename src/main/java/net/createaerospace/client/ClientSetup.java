@@ -19,6 +19,7 @@ public final class ClientSetup {
         bus.addListener(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent.class, e -> e.enqueueWork(() -> {
             net.createaerospace.compat.cfs.CfsCompat.registerClient();
             H3Renderer.registerAll();
+            OrbitalDishVisual.register();
         }));
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent.class, ClientSetup::tooltip);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, e -> {

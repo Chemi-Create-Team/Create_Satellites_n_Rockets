@@ -16,6 +16,7 @@ import net.createaerospace.relay.OrbitalDishEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+/** Fallback when Flywheel visualization is off; {@link OrbitalDishVisual} draws the same meshes as instances otherwise. */
 public final class OrbitalDishRenderer implements BlockEntityRenderer<OrbitalDishEntity> {
     private static final RenderType METAL = RenderType.entityCutoutNoCull(
         CreateAerospace.id("textures/entity/plain.png"));
@@ -30,9 +31,11 @@ public final class OrbitalDishRenderer implements BlockEntityRenderer<OrbitalDis
     private static final double DEPTH = 2.5;
     private static final Vec3 FEED = new Vec3(0, 0, -7.04);
 
-    private static final List<Quad> TOWER = tower();
-    private static final List<Quad> GIMBAL = gimbal();
-    private static final List<Quad> REFLECTOR = reflector();
+    static final List<Quad> TOWER = tower();
+    static final List<Quad> GIMBAL = gimbal();
+    static final List<Quad> REFLECTOR = reflector();
+    /** Where the gimbal turns, above the block's bottom centre. */
+    static final float PIVOT = 8.75f;
 
     public OrbitalDishRenderer(BlockEntityRendererProvider.Context ignored) { }
 
@@ -42,7 +45,7 @@ public final class OrbitalDishRenderer implements BlockEntityRenderer<OrbitalDis
         pose.pushPose();
         pose.translate(.5, 0, .5);
         draw(TOWER, vertices, pose.last(), light);
-        pose.translate(0, 8.75, 0);
+        pose.translate(0, PIVOT, 0);
         pose.mulPose(Axis.YP.rotationDegrees(-dish.bearing()));
         draw(GIMBAL, vertices, pose.last(), light);
         pose.mulPose(Axis.XP.rotationDegrees(dish.elevation()));
@@ -61,7 +64,7 @@ public final class OrbitalDishRenderer implements BlockEntityRenderer<OrbitalDis
         return 192;
     }
 
-    private record Quad(Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normal, int color) { }
+    record Quad(Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 normal, int color) { }
 
     private static void draw(List<Quad> mesh, VertexConsumer out, PoseStack.Pose pose, int light) {
         for (var quad : mesh) {
