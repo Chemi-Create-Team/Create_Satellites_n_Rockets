@@ -4,6 +4,7 @@ import net.createaerospace.CreateAerospace;
 import net.createaerospace.block.ConsoleButton;
 import net.createaerospace.block.GroundConsoleBlock;
 import net.createaerospace.block.GroundConsoleBlockEntity;
+import net.createaerospace.block.LaunchPadBlock;
 import net.createaerospace.block.LaunchPadBlockEntity;
 import net.createaerospace.entity.RocketEntity;
 import net.createaerospace.orbit.Satellite;
@@ -103,6 +104,28 @@ public class RocketGameTests {
         h.assertTrue(rockets(h).size() == 1 && !second.isEmpty(), "a second rocket is not stood on an occupied pad");
         var tank = ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank;
         h.assertTrue(tank.fill(new FluidStack(Fluids.WATER, 1000), IFluidHandler.FluidAction.EXECUTE) == 0, "water is refused");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty", batch = "rocket_clearance")
+    public static void theStandardRocketNeedsSixtyBlocksOfClearanceAndBelongsToOnePad(GameTestHelper h) {
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get());
+        BlockPos highObstacle = PAD.above(59).east(4);
+        h.setBlock(highObstacle, Blocks.STONE);
+        ItemStack stack = new ItemStack(CreateAerospace.ROCKET_ITEM.get());
+        use(h, p, stack);
+        h.assertTrue(!stack.isEmpty() && rockets(h).isEmpty(), "the high obstacle within the width and height prevents placement");
+        h.setBlock(highObstacle, Blocks.AIR);
+        h.setBlock(PAD.above(61), Blocks.STONE);
+        use(h, p, stack);
+        h.assertTrue(stack.isEmpty() && rockets(h).size() == 1, "an obstacle above the nose leaves room to place the rocket");
+        var rocket = rockets(h).get(0);
+        h.assertTrue(rocket.getBbHeight() == 60f && rocket.getBbWidth() == 10f, "the standard rocket is 60 blocks tall and 10 blocks wide");
+        BlockPos pad = h.absolutePos(PAD);
+        h.assertTrue(LaunchPadBlock.standing(h.getLevel(), pad) == rocket
+                && LaunchPadBlock.standing(h.getLevel(), pad.east()) == null, "only the pad at the rocket's base can control it");
+        rocket.discard();
         h.succeed();
     }
 

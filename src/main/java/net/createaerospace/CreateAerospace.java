@@ -42,6 +42,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 @Mod(CreateAerospace.MOD_ID)
 public class CreateAerospace {
     public static final String MOD_ID = "create_aerospace_engineering";
+    public static final float STANDARD_ROCKET_WIDTH = 10f, STANDARD_ROCKET_HEIGHT = 60f;
 
     public static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
@@ -76,7 +77,7 @@ public class CreateAerospace {
             BLOCK_ENTITIES.register("ground_console", () -> BlockEntityType.Builder.of(GroundConsoleBlockEntity::new, GROUND_CONSOLE.get()).build(null));
 
     public static final DeferredHolder<EntityType<?>, EntityType<RocketEntity>> ROCKET = ENTITIES.register("rocket",
-            () -> EntityType.Builder.<RocketEntity>of(RocketEntity::new, MobCategory.MISC).sized(1f, 5f)
+            () -> EntityType.Builder.<RocketEntity>of(RocketEntity::new, MobCategory.MISC).sized(STANDARD_ROCKET_WIDTH, STANDARD_ROCKET_HEIGHT)
                     .clientTrackingRange(16).updateInterval(1).fireImmune().build(MOD_ID + ":rocket"));
 
     public static final DeferredHolder<DisplaySource, SatelliteDisplaySource> SATELLITE_SOURCE =
@@ -106,7 +107,7 @@ public class CreateAerospace {
         bus.addListener(FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
                 {
             net.createaerospace.api.RocketApi.registerRocket(net.createaerospace.api.RocketApi.STANDARD, ROCKET_ITEM.get(),
-                    new net.createaerospace.api.RocketApi.RocketType(Component.translatable("item." + MOD_ID + ".rocket"), 1000, 4000, 200, 0.03, 2.5, 1f, 5f));
+                    new net.createaerospace.api.RocketApi.RocketType(Component.translatable("item." + MOD_ID + ".rocket"), 1000, 4000, 200, 0.03, 2.5, STANDARD_ROCKET_WIDTH, STANDARD_ROCKET_HEIGHT));
             DisplaySource.BY_BLOCK.add(GROUND_CONSOLE.get(), SATELLITE_SOURCE.get());
             net.createaerospace.compat.cfs.CfsCompat.register();
         }));

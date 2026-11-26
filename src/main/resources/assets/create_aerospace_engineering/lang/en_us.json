@@ -63,6 +63,7 @@
   "item.create_aerospace_engineering.rocket": "Rocket",
   "tooltip.create_aerospace_engineering.mass": "Mass: %s kg",
   "tooltip.create_aerospace_engineering.rocket": "Payload up to %s kg, burns %s mB. Use on a Launch Pad.",
+  "tooltip.create_aerospace_engineering.rocket_size": "%s m wide × %s m tall",
   "message.create_aerospace_engineering.rocket_status": "%s: %s payloads, %s / %s kg (sneak with an empty hand to take it down)",
   "message.create_aerospace_engineering.rocket_ready": "%s stands on the pad: %s / %s kg loaded.",
   "message.create_aerospace_engineering.no_rocket": "Stand a rocket on the pad first.",

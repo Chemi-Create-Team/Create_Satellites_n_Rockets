@@ -63,6 +63,7 @@
   "item.create_aerospace_engineering.rocket": "火箭",
   "tooltip.create_aerospace_engineering.mass": "质量：%s kg",
   "tooltip.create_aerospace_engineering.rocket": "载荷上限 %s kg，消耗 %s mB。对发射台使用。",
+  "tooltip.create_aerospace_engineering.rocket_size": "尺寸：宽 %s 米 × 高 %s 米",
   "message.create_aerospace_engineering.rocket_status": "%s：%s 个载荷，%s / %s kg（潜行空手取下）",
   "message.create_aerospace_engineering.rocket_ready": "%s 已立在发射台上：已装载 %s / %s kg。",
   "message.create_aerospace_engineering.no_rocket": "请先在发射台上立起火箭。",

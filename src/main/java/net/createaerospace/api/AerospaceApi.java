@@ -29,7 +29,7 @@ import net.minecraft.world.item.ItemStack;
  * {@code ModList.get().isLoaded("create_aerospace_engineering")}. See {@code docs/api.md}.
  */
 public final class AerospaceApi {
-    public static final int API_VERSION = 2;
+    public static final int API_VERSION = 3;
     /** The mass of CAE's own satellite, and of a payload that does not say. */
     public static final int DEFAULT_MASS_KG = 500;
     /** The largest payload data kept on one satellite, in bytes of NBT. */

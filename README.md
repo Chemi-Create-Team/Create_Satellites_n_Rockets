@@ -12,13 +12,15 @@ Everything happens in the normal world. There is no trip to space.
 
 1. **Launch Pad**: fill it with fuel, 8000 mB at most, by bucket or pipe. A launch burns what the rocket needs (4000 mB for CAE's rocket). Lava always works; naphtha,
    methanol, low-sulfur diesel and hydrogen work with Refinery 'n' Reactors (tag `create_aerospace_engineering:rocket_fuel`).
-2. Use a **Rocket** on the pad: it stands up on it (an ordinary entity with a 3D model).
+2. Use a **Rocket** on the pad: it stands up on it (an ordinary entity with a 3D model). The standard rocket is 60 m tall (60 blocks) and needs a clear 10 × 60 block space above the pad.
 3. Use **Satellites** on the rocket to load them. Every payload has a **mass** and every rocket a **maximum payload**: CAE's rocket
    lifts 1000 kg and a satellite weighs 500 kg, so it carries two (the tooltips show both numbers). Rename a satellite on an anvil
    to name it. Right-click the pad with an empty hand to read fuel and loading; sneak-right-click with an empty hand to take the
    rocket and its payloads back.
 4. Give the pad a **redstone signal** (a new one: a pad that is already powered does not fire when you fill it later). The rocket climbs for a few seconds, releases every payload as its own satellite and is gone. If the pad is
    broken before launch, the rocket and the satellites drop as items.
+
+![Standard 60 m rocket on the launch pad](docs/images/rocket-60m.jpg)
 
 The satellite is released into **geostationary orbit** over the equator at the launch longitude, like a communications
 satellite: it hangs over one spot of the world and never moves. Step it down with the altitude dial and tilt it with the

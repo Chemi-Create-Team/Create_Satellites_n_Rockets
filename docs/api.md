@@ -5,14 +5,16 @@
 - **ペイロード**（CAE 0.1.6以降、重さは0.1.7以降）：自分のアイテムを人工衛星として登録します。プレイヤーがそれを発射台のロケットに積んで打ち上げると、軌道上にそのMODの衛星ができます。
 - **ロケット**（CAE 0.1.7以降、`API_VERSION` 2）：自分のアイテムをロケットの種類として登録します。最大積載量・燃料・上昇・大きさを決め、見た目は自由に描けます。
 
+CAE 0.1.8（`API_VERSION` 3）では、登録できるロケットの大きさを幅10・高さ60ブロックまで拡張しました。
+
 GPSや通信の中継のような機能は、登録したMODが衛星の位置とデータを読んで実装します。
 
 依存は双方とも任意です。CAEは登録したMODを知らず、登録したMODもCAEがない環境で動きます。
 
 ## 組み込む
 
-1. `dist/create-aerospace-engineering-api-0.1.7.jar` を `compileOnly` に追加します。ハッシュは `dist/SHA256SUMS` にあります。
-2. `neoforge.mods.toml` で `create_aerospace_engineering` を `type = "optional"`、`versionRange = "[0.1.7,)"`（重さやロケットを使わないなら `[0.1.6,)`） として宣言します。
+1. `dist/create-aerospace-engineering-api-0.1.8.jar` を `compileOnly` に追加します。ハッシュは `dist/SHA256SUMS` にあります。
+2. `neoforge.mods.toml` で `create_aerospace_engineering` を `type = "optional"`、`versionRange = "[0.1.7,)"`（幅10・高さ60までの新しい寸法を使う場合は `[0.1.8,)`、重さやロケットを使わない場合は `[0.1.6,)`） として宣言します。
 3. CAEのクラスを参照するのは連携用の1クラスだけにし、`ModList.get().isLoaded("create_aerospace_engineering")` を確かめてから呼びます。CAEがない環境では、そのクラスを読み込みません。
 
 ```java
@@ -108,7 +110,7 @@ RocketApi.registerRocket(HEAVY, ExampleItems.HEAVY_LIFTER.get(), new RocketApi.R
         320,    // 上昇する高さ（16〜1024ブロック）
         0.02,   // 加速度 ブロック/tick²
         3.0,    // 最高速度 ブロック/tick（10まで）
-        3f, 9f  // 幅（4まで）・高さ（16まで）ブロック
+        3f, 9f  // 幅（10まで）・高さ（60まで）ブロック
 ), new RocketApi.Hooks() {   // 省略可（null でもよい）
     @Override
     public void launched(ServerLevel level, Entity rocket, List<ItemStack> payloads) { /* 発射の瞬間 */ }
@@ -140,7 +142,7 @@ RocketRenderers.register(HEAVY, new RocketRenderers.Renderer() {
 - 登録したアイテムを発射台に使うと、そのロケットが立ちます。アイテムは1個消費し、データコンポーネントごと保存して、降ろすと戻します（`Context.rocketItem()` で描画にも使えます。色や名前を付けたロケットを描き分けられます）。
 - ペイロードの重さの合計が `maxPayloadKg` を超える分は積めません。発射には1個以上のペイロードと `fuelMb` 以上の燃料が要ります。
 - 大きさはエンティティの当たり判定です。ロケットは発射台の中心に立つので、幅が1を超えると隣のブロックの上の空間も空いている必要があります。
-- 描画を登録しなかった種類は、CAEのロケットのモデルで描きます。
+- 描画を登録しなかった種類は、CAEのロケットのモデルを登録された幅・高さに合わせて描きます。
 - `Context` には種類のID、アイテム、上昇中か、上昇のtick数、積載重量・最大積載量・積んだ数、幅・高さ、ゲーム時刻、partialTick、PoseStack、バッファ、明るさが入ります。
 - `Hooks` と `Renderer` の例外はCAEが記録して続けます（ロケットも衛星も失われません。描画の例外は種類ごとに1回だけ記録）。
 - 同じID・同じアイテムの二重登録や、ペイロードとして登録済みのアイテムは例外になります。範囲外の数値は `RocketType` の作成時に例外になります。
@@ -151,4 +153,5 @@ RocketRenderers.register(HEAVY, new RocketRenderers.Renderer() {
 | `rocketOf(stack)` | そのアイテムが立てるロケットの種類。なければ null |
 | `rocket(id)` / `rocketOrStandard(id)` | 登録の照会。後者は不明なIDならCAEのロケット |
 | `STANDARD` / `MAX_FUEL_MB` | CAEのロケットのID、発射台の容量（8000 mB） |
+| `MAX_WIDTH` / `MAX_HEIGHT` | ロケットの幅・高さの上限（10・60ブロック） |
 

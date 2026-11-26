@@ -59,13 +59,10 @@ public class LaunchPadBlock extends Block implements EntityBlock, IWrenchable {
         return new LaunchPadBlockEntity(pos, state);
     }
 
-    public static AABB rocketSpace(BlockPos pos) {
-        return new AABB(pos).expandTowards(0, 5, 0).deflate(0.1, 0, 0.1);
-    }
-
     /** The rocket standing on the pad (not yet climbing), or null. */
     public static RocketEntity standing(Level level, BlockPos pos) {
-        var list = level.getEntitiesOfClass(RocketEntity.class, rocketSpace(pos), r -> !r.isAscending());
+        var list = level.getEntitiesOfClass(RocketEntity.class, new AABB(pos),
+                r -> !r.isAscending() && r.blockPosition().equals(pos));
         return list.isEmpty() ? null : list.get(0);
     }
 
@@ -86,15 +83,22 @@ public class LaunchPadBlock extends Block implements EntityBlock, IWrenchable {
         if (level.isClientSide) return ItemInteractionResult.SUCCESS;
         RocketEntity standing = standing(level, pos);
         if (rocketType != null) {
-            if (standing != null || !level.getEntitiesOfClass(RocketEntity.class, rocketSpace(pos)).isEmpty()) {
+            if (standing != null) {
                 say(player, "pad_occupied");
                 return ItemInteractionResult.SUCCESS;
             }
             RocketEntity r = CreateAerospace.ROCKET.get().create(level);
             r.setRocket(rocketType, stack);
             r.setPos(pos.getX() + .5, pos.getY() + .25, pos.getZ() + .5);
-            if (!level.noCollision(r.getBoundingBox())) {
+            AABB space = r.getBoundingBox();
+            if (space.maxY > level.getMaxBuildHeight() || !level.noCollision(space)) {
                 say(player, "pad_blocked");
+                return ItemInteractionResult.SUCCESS;
+            }
+            // The index locates entities by their base, which can be outside the new rocket's volume even when their bodies overlap.
+            AABB nearby = space.inflate(RocketApi.MAX_WIDTH / 2.0, RocketApi.MAX_HEIGHT, RocketApi.MAX_WIDTH / 2.0);
+            if (!level.getEntitiesOfClass(RocketEntity.class, nearby, other -> other.getBoundingBox().intersects(space)).isEmpty()) {
+                say(player, "pad_occupied");
                 return ItemInteractionResult.SUCCESS;
             }
             r.setOwner(player);

@@ -174,12 +174,13 @@ public class RocketEntity extends Entity {
         ascent++;
         var t = type().type();
         double speed = Math.min(t.topSpeed(), t.acceleration() * ascent);
-        setPos(getX(), getY() + speed, getZ());
+        double ceiling = level().getMaxBuildHeight() - Math.max(4, getBbHeight());
+        setPos(getX(), Math.max(getY(), Math.min(getY() + speed, ceiling)), getZ());
         if (level().isClientSide) {
             net.createaerospace.client.RocketRenderer.exhaust(this);
         } else {
             if (Double.isNaN(startY)) startY = getY() - speed * ascent / 2;
-            if (getY() - startY >= t.climbBlocks() || getY() >= level().getMaxBuildHeight() - 4) deploy();
+            if (getY() - startY >= t.climbBlocks() || getY() >= ceiling) deploy();
         }
     }
 

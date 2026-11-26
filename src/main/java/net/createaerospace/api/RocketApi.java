@@ -24,6 +24,7 @@ public final class RocketApi {
     public static final ResourceLocation STANDARD = ResourceLocation.fromNamespaceAndPath("create_aerospace_engineering", "rocket");
     /** The pad holds this much fuel, so no rocket can burn more in one launch. */
     public static final int MAX_FUEL_MB = 8000;
+    public static final int MAX_WIDTH = 10, MAX_HEIGHT = 60;
 
     private static final Map<ResourceLocation, Registered> TYPES = new HashMap<>();
     private static final Map<Item, ResourceLocation> ITEMS = new HashMap<>();
@@ -32,7 +33,7 @@ public final class RocketApi {
 
     /**
      * What a rocket can do. {@code maxPayloadKg} is the most the payloads on it may weigh together. {@code fuelMb} is burnt from the
-     * pad at lift-off. The rocket climbs {@code climbBlocks} (or to 4 blocks under the build limit) with {@code acceleration} blocks
+     * pad at lift-off. The rocket climbs {@code climbBlocks} (or until the nose nears the build limit, with a minimum margin of 4 blocks from the base) with {@code acceleration} blocks
      * per tick per tick up to {@code topSpeed} blocks per tick, then releases its payloads. {@code width} and {@code height} are the
      * size of the entity in blocks; it stands on the pad, so the space above the pad must be free for it.
      */
@@ -41,7 +42,7 @@ public final class RocketApi {
         public RocketType {
             Objects.requireNonNull(name);
             if (maxPayloadKg <= 0 || fuelMb < 0 || fuelMb > MAX_FUEL_MB || climbBlocks < 16 || climbBlocks > 1024
-                    || !(acceleration > 0) || !(topSpeed > 0) || topSpeed > 10 || !(width > 0) || width > 4 || !(height > 0) || height > 16) {
+                    || !(acceleration > 0) || !(topSpeed > 0) || topSpeed > 10 || !(width > 0) || width > MAX_WIDTH || !(height > 0) || height > MAX_HEIGHT) {
                 throw new IllegalArgumentException("Invalid CAE rocket type: " + name.getString());
             }
         }

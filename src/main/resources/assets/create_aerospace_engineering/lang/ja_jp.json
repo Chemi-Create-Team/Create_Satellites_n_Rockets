@@ -63,6 +63,7 @@
   "item.create_aerospace_engineering.rocket": "ロケット",
   "tooltip.create_aerospace_engineering.mass": "重量: %s kg",
   "tooltip.create_aerospace_engineering.rocket": "積載量 %s kg まで、燃料 %s mB。発射台に使う",
+  "tooltip.create_aerospace_engineering.rocket_size": "大きさ: 幅 %s m × 高さ %s m",
   "message.create_aerospace_engineering.rocket_status": "%s: 積荷 %s 個、%s / %s kg（スニーク＋素手で降ろす）",
   "message.create_aerospace_engineering.rocket_ready": "%s を発射台に立てた: %s / %s kg 積載",
   "message.create_aerospace_engineering.no_rocket": "先に発射台へロケットを立てる",

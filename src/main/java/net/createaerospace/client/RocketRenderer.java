@@ -7,17 +7,15 @@ import net.createaerospace.entity.RocketEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 public class RocketRenderer extends EntityRenderer<RocketEntity> {
     private static final ResourceLocation TEXTURE = CreateAerospace.id("textures/entity/rocket.png");
     private static final java.util.Set<ResourceLocation> FAILED = java.util.concurrent.ConcurrentHashMap.newKeySet();
-    private final RocketModel model;
 
     public RocketRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
-        model = new RocketModel(ctx.bakeLayer(ClientSetup.ROCKET_LAYER));
         shadowRadius = 0.5f;
     }
 
@@ -39,9 +37,10 @@ public class RocketRenderer extends EntityRenderer<RocketEntity> {
             return;
         }
         ps.pushPose();
-        ps.scale(-1, -1, 1);
-        ps.translate(0, -1.501, 0);
-        model.renderToBuffer(ps, buffers.getBuffer(model.renderType(TEXTURE)), rocket.isAscending() ? 0xF000F0 : light, OverlayTexture.NO_OVERLAY, -1);
+        float width = rocket.getBbWidth() / CreateAerospace.STANDARD_ROCKET_WIDTH;
+        float height = rocket.getBbHeight() / CreateAerospace.STANDARD_ROCKET_HEIGHT;
+        ps.scale(width, height, width);
+        RocketModel.render(ps.last(), buffers.getBuffer(RenderType.entityCutout(TEXTURE)), rocket.isAscending() ? 0xF000F0 : light);
         ps.popPose();
         super.render(rocket, yaw, partialTick, ps, buffers, light);
     }
