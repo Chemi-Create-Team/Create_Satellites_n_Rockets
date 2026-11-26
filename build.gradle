@@ -70,3 +70,14 @@ tasks.named("processResources", ProcessResources).configure {
 }
 
 tasks.withType(JavaCompile).configureEach { options.encoding = "UTF-8" }
+
+// The API other mods compile against (compileOnly), so that CAE stays an optional dependency for them. Built into dist/ by
+// ./gradlew apiJar and committed with the version; see docs/api.md.
+tasks.register("apiJar", Jar) {
+    archiveBaseName = "create-aerospace-engineering-api"
+    archiveVersion = mod_version
+    destinationDirectory = layout.projectDirectory.dir("dist")
+    from(sourceSets.main.output) { include "net/createaerospace/api/**" }
+    from(sourceSets.main.allJava) { include "net/createaerospace/api/**" }
+    dependsOn tasks.named("classes")
+}

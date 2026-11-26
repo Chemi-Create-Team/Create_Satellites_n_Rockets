@@ -11,6 +11,7 @@ CAE（旧名 Create: Satellites 'n' Rockets）は、ロケットを発射台か�
 | 表示名 | `mod_name`（`gradle.properties`）と `itemGroup.create_aerospace_engineering`（`lang/*.json`）、READMEの題名。現行は「Create: Aerospace Engineering」 |
 | 依存 | NeoForge 21.1.228+（Minecraft 1.21.1）、Create 6.0.10+。RnRは任意。版の基準は `gradle.properties` |
 | 登録 | `CreateAerospace`（`DeferredRegister`）。ブロック2種（発射台・地上管制コンソール）、アイテム1種（人工衛星）、エンティティ1種（ロケット）、ブロックエンティティ2種、Display Link用の表示ソース1つ、クリエイティブタブ1つ |
+| API | `docs/api.md`、`dist/`（外部MOD向けのAPI JARとハッシュ） |
 | リソース | `assets/` と `data/` は手書き。生成スクリプトは無く、直接編集してよい |
 | 検証 | ローカルのみ（CIなし）。[文書と検証](#文書と検証) |
 
@@ -48,6 +49,7 @@ mod IDを変えたため、旧IDで保存したワールドのブロック・ア
 - 地上管制コンソールは、CFS（Create: Frontier Science）0.3.26以降があるときだけ、共通制御コンピュータの「追加アプリ」（キャンバスAPI v2）としても使える（`compat/cfs`、描画は `client/CfsCanvasRenderer`）。**任意の連携で、必須依存にしない。** `net.createfrontier.*` を参照してよいのは `CfsComputerApp`（サーバー）と `CfsCanvasRenderer`（クライアント）だけで、`CfsCompat` が `ModList` と `ComputerCanvas`・`ComputerCanvasRenderers` クラスの有無を確かめてから呼ぶ。`libs/` のAPI JAR（`compileOnly`）はCFSの `dist/` の公式のものをそのまま使い、版を上げるときはハッシュを `build.gradle` のコメントに書く。CFS本体は変更しない。
 - コンピュータのアプリは「制御」と「マップ」（立体の地球）の2画面。マップには地球を45度ずつ回すボタンがあり、向きは `Rot` としてフレームに入れる。ボタンとタブの位置は `CfsLayout`（正規化座標）だけに書き、描画（クライアント）とクリックの判定（サーバー）が同じものを使う。フレームに入れるのは表示画面・選択衛星・離脱カバーの期限だけで、衛星と時刻はクライアントが自分の写し（`ClientSatellites`、`gameTime`）から描く（時刻で変わる値をフレームに入れると毎回同期される）。
 - **コンソールの機能を変えたら、コンピュータのアプリも同じ変更で直す。** 表示は `SatelliteReadout`（コンソールの画面・マップ画面・アプリの共通）、操作は `SatelliteControl`（コンソールのブロックとアプリの共通）に書く。コンソールにボタンや表示項目を足したときは、`SatelliteControl.appButtons()` の対象か、アプリに出せない理由を決め、`CfsLayout`・`CfsCanvasRenderer`・`computer.*` の翻訳（3言語）・両方のREADMEを更新する（レイアウトの整合は `OrbitGameTests` が検査する）。
+- **外部MODの衛星はペイロードAPI（`api/AerospaceApi`）で受ける。** 外部のロケットは受けず、CAEのロケットが登録アイテムを1個そのまま載せる（ユーザー了承済みの方針）。APIの型はMinecraftとJavaのものだけにし、CFSなど外部MODへの依存を持たない。外部MODは `dist/create-aerospace-engineering-api-<版>.jar` を `compileOnly` で使うので、API（`net.createaerospace.api`）を変えた版では `./gradlew apiJar` でJARを作り、`dist/SHA256SUMS` と `docs/api.md` を同じコミットで更新する。公開済みのメソッドを消したり意味を変えたりせず、足すときは `API_VERSION` を上げる。衛星の種類は `Satellite.payload`（IDの文字列、空は通常の衛星）、データは `SatelliteData` にサーバー専用で保存し、衛星と一緒に消す。外部MODのコールバックの例外で衛星を失わない。
 
 ## 文書と検証
 

@@ -2,9 +2,9 @@ package net.createaerospace.entity;
 
 import java.util.UUID;
 import net.createaerospace.CreateAerospace;
+import net.createaerospace.api.AerospaceApi;
 import net.createaerospace.orbit.OrbitMath;
 import net.createaerospace.orbit.Satellite;
-import net.createaerospace.orbit.SatelliteData;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -31,7 +31,8 @@ public class RocketEntity extends Entity {
 
     private UUID owner = new UUID(0, 0);
     private String ownerName = "";
-    private String payloadName = "";
+    /** The item that goes to orbit, one of it, with all its components (the name, and whatever the mod of a payload put on it). */
+    private ItemStack payload = ItemStack.EMPTY;
     private int ascent;
     private double startY = Double.NaN;
 
@@ -46,8 +47,11 @@ public class RocketEntity extends Entity {
     }
 
     public void setPayload(ItemStack stack) {
-        var n = stack.get(DataComponents.CUSTOM_NAME);
-        payloadName = n == null ? "" : n.getString();
+        payload = stack.copyWithCount(1);
+    }
+
+    public ItemStack payload() {
+        return payload.copy();
     }
 
     public boolean isAscending() {
@@ -100,17 +104,19 @@ public class RocketEntity extends Entity {
     }
 
     private ItemStack payloadItem() {
-        ItemStack s = new ItemStack(CreateAerospace.SATELLITE.get());
-        if (!payloadName.isEmpty()) s.set(DataComponents.CUSTOM_NAME, Component.literal(payloadName));
-        return s;
+        return payload.isEmpty() ? new ItemStack(CreateAerospace.SATELLITE.get()) : payload.copy();
     }
 
     private void deploy() {
         var server = level().getServer();
         long now = server.overworld().getGameTime();
-        String name = payloadName.isEmpty() ? String.format("SAT-%04X", random.nextInt(0x10000)) : payloadName;
-        Satellite s = Satellite.deployed(name, owner, ownerName, OrbitMath.lonOf(getX()), now);
-        SatelliteData.get(server).put(server, s);
+        ItemStack stack = payloadItem();
+        var custom = stack.get(DataComponents.CUSTOM_NAME);
+        String name = custom == null ? String.format("SAT-%04X", random.nextInt(0x10000)) : custom.getString();
+        var type = AerospaceApi.payloadOf(stack);
+        Satellite s = Satellite.deployed(UUID.randomUUID(), name, owner, ownerName, OrbitMath.lonOf(getX()), now,
+                type == null || type.equals(AerospaceApi.STANDARD) ? "" : type.toString());
+        AerospaceApi.deploy((net.minecraft.server.level.ServerLevel) level(), stack, s);
         level().playSound(null, getX(), getY(), getZ(), SoundEvents.FIREWORK_ROCKET_BLAST_FAR, SoundSource.AMBIENT, 8f, 1f);
         if (server.getPlayerList().getPlayer(owner) instanceof ServerPlayer p)
             p.sendSystemMessage(Component.translatable("message.create_aerospace_engineering.deployed", name));
@@ -121,7 +127,12 @@ public class RocketEntity extends Entity {
     protected void readAdditionalSaveData(CompoundTag t) {
         if (t.hasUUID("owner")) owner = t.getUUID("owner");
         ownerName = t.getString("ownerName");
-        payloadName = t.getString("payloadName");
+        payload = t.contains("payload") ? ItemStack.parseOptional(registryAccess(), t.getCompound("payload")) : ItemStack.EMPTY;
+        // rockets saved before 0.1.6 kept only the name
+        if (payload.isEmpty() && !t.getString("payloadName").isEmpty()) {
+            payload = new ItemStack(CreateAerospace.SATELLITE.get());
+            payload.set(DataComponents.CUSTOM_NAME, Component.literal(t.getString("payloadName")));
+        }
         entityData.set(ASCENDING, t.getBoolean("ascending"));
         if (t.contains("startY")) startY = t.getDouble("startY");
     }
@@ -130,7 +141,7 @@ public class RocketEntity extends Entity {
     protected void addAdditionalSaveData(CompoundTag t) {
         t.putUUID("owner", owner);
         t.putString("ownerName", ownerName);
-        t.putString("payloadName", payloadName);
+        if (!payload.isEmpty()) t.put("payload", payload.save(registryAccess()));
         t.putBoolean("ascending", isAscending());
         if (!Double.isNaN(startY)) t.putDouble("startY", startY);
     }

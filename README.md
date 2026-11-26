@@ -62,6 +62,13 @@ without Frontier Science nothing changes.
 - It does not need a Ground Control Console block. Each computer keeps its own view and selection (forgotten on a restart). Only the owner of a
   satellite (or an operator) can change it, as on the console.
 
+## Satellites of other mods (API)
+
+Other mods can register their own item as a satellite payload. Used on a Launch Pad, it rides a CAE rocket to orbit and becomes a
+satellite of that mod, which reads its position and keeps its own data on it (for a GPS, a relay for a channel network, ...). Both sides
+stay optional. The ground console shows the payload as **PAYLOAD**. See [docs/api.md](docs/api.md) (Japanese) and
+`dist/create-aerospace-engineering-api-*.jar`.
+
 ## Commands (operators)
 
 `/satellite list`, `/satellite add <name> [tier 0-3]` (geostationary unless a lower tier is given), `/satellite remove <name>`.

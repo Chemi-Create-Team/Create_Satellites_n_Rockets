@@ -61,7 +61,8 @@ public class LaunchPadBlock extends Block implements EntityBlock, IWrenchable {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (stack.is(CreateAerospace.SATELLITE.get())) {
+        // CAE's satellite, or a payload another mod registered through api.AerospaceApi
+        if (net.createaerospace.api.AerospaceApi.payloadOf(stack) != null) {
             if (!level.isClientSide) {
                 if (!level.getEntitiesOfClass(RocketEntity.class, rocketSpace(pos)).isEmpty()) {
                     player.displayClientMessage(Component.translatable("message.create_aerospace_engineering.pad_occupied"), true);

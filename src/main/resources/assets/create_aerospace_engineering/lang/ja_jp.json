@@ -58,5 +58,7 @@
   "computer.create_aerospace_engineering.button.deorbit": "軌道離脱",
   "computer.create_aerospace_engineering.button.deorbit_confirm": "離脱を確定",
   "computer.create_aerospace_engineering.button.rotate_left": "左へ回す",
-  "computer.create_aerospace_engineering.button.rotate_right": "右へ回す"
+  "computer.create_aerospace_engineering.button.rotate_right": "右へ回す",
+  "console.create_aerospace_engineering.payload": "積荷 %s",
+  "computer.create_aerospace_engineering.status_payload": "%s　－　%s"
 }

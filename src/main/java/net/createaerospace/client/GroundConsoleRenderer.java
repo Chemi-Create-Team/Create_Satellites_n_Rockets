@@ -57,7 +57,8 @@ public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleB
         ps.mulPose(Axis.XP.rotationDegrees(90));
         ps.scale(TEXT_SCALE, TEXT_SCALE, -TEXT_SCALE);
         int y = 0;
-        for (var line : lines(be, s, now + partial)) {
+        var lines = lines(be, s, now + partial);
+        for (var line : lines) {
             // squeeze a line that would run past the screen instead of guessing at string lengths in every language
             float fit = Math.min(1f, MAX_LINE_WIDTH / Math.max(1, font.width(line)));
             ps.pushPose();
@@ -65,7 +66,7 @@ public class GroundConsoleRenderer implements BlockEntityRenderer<GroundConsoleB
             ps.scale(fit, fit, 1);
             font.drawInBatch(line.getVisualOrderText(), 0, 0, 0x55FF77, false, ps.last().pose(), buffers, Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
             ps.popPose();
-            y += 9;
+            y += lines.size() > 7 ? 8 : 9;
         }
         ps.popPose();
         ps.popPose();

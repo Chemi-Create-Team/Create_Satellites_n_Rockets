@@ -187,4 +187,62 @@ public class RocketGameTests {
         h.assertTrue(pad.tank.getFluidAmount() == 3500 && pad.tank.getFluid().getFluid() == Fluids.LAVA, "fuel survives saving");
         h.succeed();
     }
+
+    private static final net.minecraft.resources.ResourceLocation TEST_PAYLOAD = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("cae_test", "beacon");
+    private static final java.util.List<java.util.UUID> REMOVED = new java.util.ArrayList<>();
+
+    /** A compass stands in for the satellite item of another mod. Registered once per test server. */
+    private static synchronized void registerTestPayload() {
+        if (net.createaerospace.api.AerospaceApi.payload(TEST_PAYLOAD) != null) return;
+        net.createaerospace.api.AerospaceApi.registerPayload(TEST_PAYLOAD, net.minecraft.world.item.Items.COMPASS, new net.createaerospace.api.AerospaceApi.Payload() {
+            @Override
+            public net.minecraft.network.chat.Component name() {
+                return net.minecraft.network.chat.Component.literal("TEST");
+            }
+
+            @Override
+            public net.minecraft.nbt.CompoundTag deploy(net.minecraft.server.level.ServerLevel level, ItemStack stack,
+                                                       net.createaerospace.api.AerospaceApi.SatelliteInfo satellite) {
+                var t = new net.minecraft.nbt.CompoundTag();
+                t.putString("from", stack.getHoverName().getString());
+                return t;
+            }
+
+            @Override
+            public void removed(net.minecraft.server.MinecraftServer server, net.createaerospace.api.AerospaceApi.SatelliteInfo satellite) {
+                REMOVED.add(satellite.id());
+            }
+        });
+    }
+
+    @GameTest(template = "test_empty", batch = "rocket_payload", timeoutTicks = 400)
+    public static void aRocketCarriesThePayloadOfAnotherModToOrbit(GameTestHelper h) {
+        registerTestPayload();
+        Player p = h.makeMockPlayer(GameType.SURVIVAL);
+        h.setBlock(PAD, CreateAerospace.LAUNCH_PAD.get().defaultBlockState());
+        ItemStack stack = new ItemStack(net.minecraft.world.item.Items.COMPASS);
+        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Nav-1"));
+        p.setItemInHand(InteractionHand.MAIN_HAND, stack);
+        BlockPos abs = h.absolutePos(PAD);
+        h.getLevel().getBlockState(abs).useItemOn(stack, h.getLevel(), p, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(abs), Direction.UP, abs, false));
+        h.assertTrue(stack.isEmpty() && rockets(h).size() == 1, "the payload item stands a rocket up");
+        h.assertTrue(rockets(h).get(0).payload().is(net.minecraft.world.item.Items.COMPASS), "the rocket keeps the item itself");
+        ((LaunchPadBlockEntity) h.getBlockEntity(PAD)).tank.fill(new FluidStack(Fluids.LAVA, 4000), IFluidHandler.FluidAction.EXECUTE);
+        h.setBlock(PAD.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        h.succeedWhen(() -> {
+            var server = h.getLevel().getServer();
+            var mine = net.createaerospace.api.AerospaceApi.satellites(server, TEST_PAYLOAD).stream().filter(x -> x.owner().equals(p.getUUID())).toList();
+            h.assertTrue(rockets(h).isEmpty() && mine.size() == 1, "one satellite of the test payload in orbit");
+            var s = mine.get(0);
+            h.assertTrue(s.name().equals("Nav-1") && s.data().getString("from").equals("Nav-1"), "deploy() saw the stack and its data was kept");
+            h.assertTrue(net.createaerospace.api.AerospaceApi.elevation(server, s.id(), abs).isPresent(), "elevation is known");
+            var more = s.data();
+            more.putInt("channel", 7);
+            h.assertTrue(net.createaerospace.api.AerospaceApi.setData(server, s.id(), more), "data can be replaced");
+            h.assertTrue(net.createaerospace.api.AerospaceApi.satellite(server, s.id()).get().data().getInt("channel") == 7, "and read back");
+            SatelliteData.get(server).remove(server, s.id());
+            h.assertTrue(REMOVED.contains(s.id()), "the payload heard that its satellite left orbit");
+            h.assertTrue(SatelliteData.get(server).data(s.id()).isEmpty(), "its data went with it");
+        });
+    }
 }

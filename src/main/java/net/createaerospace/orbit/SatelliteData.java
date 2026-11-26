@@ -1,6 +1,7 @@
 package net.createaerospace.orbit;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /** Every satellite of the world, kept on the overworld. Positions are never stored: they follow from the orbit and the game time. */
 public class SatelliteData extends SavedData {
     private final Map<UUID, Satellite> all = new LinkedHashMap<>();
+    /** What the mod of a payload keeps on its satellite (see {@code api.AerospaceApi}). Server only, never sent to clients. */
+    private final Map<UUID, CompoundTag> payloadData = new HashMap<>();
 
     public static SatelliteData get(MinecraftServer server) {
         return server.getLevel(Level.OVERWORLD).getDataStorage().computeIfAbsent(
@@ -37,8 +40,27 @@ public class SatelliteData extends SavedData {
         changed(server);
     }
 
+    /** The payload data of a satellite, a copy; empty when there is none. */
+    public CompoundTag data(UUID id) {
+        CompoundTag t = payloadData.get(id);
+        return t == null ? new CompoundTag() : t.copy();
+    }
+
+    public void setData(UUID id, CompoundTag data) {
+        if (!all.containsKey(id)) return;
+        if (data.isEmpty()) payloadData.remove(id);
+        else payloadData.put(id, data.copy());
+        setDirty();
+    }
+
+    /** Takes a satellite out of orbit. The mod of its payload hears about it first, while its data is still there. */
     public void remove(MinecraftServer server, UUID id) {
-        if (all.remove(id) != null) changed(server);
+        Satellite s = all.get(id);
+        if (s == null) return;
+        net.createaerospace.api.AerospaceApi.removing(server, s);
+        all.remove(id);
+        payloadData.remove(id);
+        changed(server);
     }
 
     private void changed(MinecraftServer server) {
@@ -49,7 +71,11 @@ public class SatelliteData extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag l = new ListTag();
-        all.values().forEach(s -> l.add(s.save()));
+        all.values().forEach(s -> {
+            CompoundTag t = s.save();
+            if (payloadData.containsKey(s.id())) t.put("data", payloadData.get(s.id()));
+            l.add(t);
+        });
         tag.put("satellites", l);
         return tag;
     }
@@ -59,6 +85,7 @@ public class SatelliteData extends SavedData {
         for (Tag t : tag.getList("satellites", Tag.TAG_COMPOUND)) {
             Satellite s = Satellite.load((CompoundTag) t);
             d.all.put(s.id(), s);
+            if (((CompoundTag) t).contains("data", Tag.TAG_COMPOUND)) d.payloadData.put(s.id(), ((CompoundTag) t).getCompound("data"));
         }
         return d;
     }

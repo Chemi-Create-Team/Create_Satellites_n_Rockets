@@ -60,7 +60,8 @@ public final class CfsCanvasRenderer {
             return;
         }
         var r = SatelliteReadout.of(sel, all.indexOf(sel), all.size(), tick, c.boardPos());
-        text(g, w, h, Component.literal(r.name()), st.l() + .02f, st.t() + .012f, .9f, .056f, 0, YELLOW);
+        text(g, w, h, r.payloadName() == null ? Component.literal(r.name())
+                : Component.translatable(K + "status_payload", r.name(), r.payloadName()), st.l() + .02f, st.t() + .012f, .9f, .056f, 0, YELLOW);
 
         Component[] values = {Component.literal(r.number() + " / " + r.count()), Component.literal(r.owner()),
                 Component.literal(r.lat() + "  " + r.lon()), Component.literal("X " + r.blockX() + "  Z " + r.blockZ()),
